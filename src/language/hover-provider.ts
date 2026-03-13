@@ -59,9 +59,10 @@ export class RenpyHoverProvider implements vscode.HoverProvider {
       return new vscode.Hover(md, range);
     }
 
-    // ── Screen hover ──
+    // ── Screen hover (on screen definitions, show/call/use screen references) ──
     const screenEntries = index.screens.get(word);
-    if (screenEntries && screenEntries.length > 0 && /\b(show|call|use)\s+(?:screen\s+)?/.test(trimmed)) {
+    if (screenEntries && screenEntries.length > 0
+        && (/\b(show|call|use)\s+(?:screen\s+)?/.test(trimmed) || /^screen\s+/.test(trimmed))) {
       const md = new vscode.MarkdownString();
       md.appendMarkdown(`**${localize('screen', 'スクリーン')}** \`${word}\`\n\n`);
       for (const entry of screenEntries) {
