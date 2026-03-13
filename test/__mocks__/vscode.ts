@@ -82,15 +82,21 @@ export enum CompletionItemKind {
   Variable = 5, Class = 6, Interface = 7, Module = 8, Property = 9,
   Unit = 10, Value = 11, Enum = 12, Keyword = 13, Snippet = 14,
   Color = 15, Reference = 17, File = 16, Folder = 18, Event = 22,
+  Struct = 21, Constant = 20,
 }
 
 export class CompletionItem {
   documentation?: MarkdownString;
   detail?: string;
+  insertText?: SnippetString | string;
   constructor(
     public label: string,
     public kind: CompletionItemKind = CompletionItemKind.Text,
   ) {}
+}
+
+export class SnippetString {
+  constructor(public value: string = '') {}
 }
 
 export enum CodeActionKind {
@@ -225,8 +231,15 @@ export class CancellationTokenSource {
   dispose() {}
 }
 
+export enum InlayHintKind {
+  Type = 1,
+  Parameter = 2,
+}
+
 export class InlayHint {
-  constructor(public position: Position, public label: string) {}
+  paddingLeft?: boolean;
+  paddingRight?: boolean;
+  constructor(public position: Position, public label: string, public kind?: InlayHintKind) {}
 }
 
 export class DocumentLink {
@@ -309,6 +322,10 @@ export class DocumentHighlight {
 export const RelativePattern = class {
   constructor(public base: any, public pattern: string) {}
 };
+
+export class CodeLens {
+  constructor(public range: Range, public command?: { title: string; command: string; arguments?: any[] }) {}
+}
 
 export class DebugAdapterInlineImplementation {
   constructor(public session: any) {}
