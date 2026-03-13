@@ -103,6 +103,21 @@
           "default": true,
           "description": "%config.diagnostics.indentation%"
         },
+        "renpyCode.diagnostics.unusedLabel": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.unusedLabel%"
+        },
+        "renpyCode.diagnostics.missingResource": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.missingResource%"
+        },
+        "renpyCode.diagnostics.unreachableCode": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.unreachableCode%"
+        },
         "renpyCode.license.key": {
           "type": "string",
           "default": "",
@@ -189,6 +204,10 @@
         "command": "renpyCode.refreshVariables",
         "title": "%command.refreshVariables%",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "renpyCode.profileProject",
+        "title": "%command.profileProject%"
       }
     ],
     "menus": {

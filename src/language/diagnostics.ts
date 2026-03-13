@@ -14,6 +14,9 @@ export interface DiagnosticsConfig {
   undefinedCharacter: boolean;
   invalidJump: boolean;
   indentation: boolean;
+  unusedLabel: boolean;
+  missingResource: boolean;
+  unreachableCode: boolean;
 }
 
 export class RenpyDiagnosticsProvider {
@@ -61,12 +64,47 @@ export class RenpyDiagnosticsProvider {
     // Walk AST for semantic diagnostics
     this.checkNodes(parsed.nodes, index, config, diagnostics, false);
 
+    // ── Unused label check (project-wide) ──
+    if (config.unusedLabel) {
+      // Collect all label references across the whole project
+      const referencedLabels = new Set<string>();
+      for (const [, parsedFile] of index.files) {
+        this.collectLabelRefs(parsedFile.nodes, referencedLabels);
+      }
+
+      // Check labels in the current file
+      for (const [, labelNode] of parsed.labels) {
+        const name = labelNode.name;
+        if (name.startsWith('_')) continue;
+        if (RenpyDiagnosticsProvider.SPECIAL_LABELS.has(name)) continue;
+        if (referencedLabels.has(name)) continue;
+
+        const range = new vscode.Range(
+          labelNode.nameRange.start.line, labelNode.nameRange.start.column,
+          labelNode.nameRange.end.line, labelNode.nameRange.end.column,
+        );
+        diagnostics.push(new vscode.Diagnostic(
+          range,
+          localize(
+            `Label '${name}' is never referenced by jump or call`,
+            `ラベル '${name}' はjump/callで参照されていません`,
+          ),
+          vscode.DiagnosticSeverity.Hint,
+        ));
+      }
+    }
+
     this.collection.set(document.uri, diagnostics);
   }
 
   /** Node types where dialogue-like lines are actually properties/commands, not real dialogue. */
   private static readonly NON_DIALOGUE_CONTEXTS: ReadonlySet<NodeType> = new Set([
     'screen', 'style_def', 'testcase', 'init_block', 'python_block', 'transform_def', 'image_def',
+  ]);
+
+  /** Ren'Py special labels that should not trigger unused-label warnings. */
+  private static readonly SPECIAL_LABELS: ReadonlySet<string> = new Set([
+    'start', 'main_menu', 'splashscreen', 'before_main_menu', 'after_load', 'after_warp',
   ]);
 
   /** Names that should never trigger an undefined-character warning (built-in narrators & keywords). */
@@ -86,7 +124,32 @@ export class RenpyDiagnosticsProvider {
     diagnostics: vscode.Diagnostic[],
     inNonDialogueContext: boolean,
   ): void {
+    let afterTerminator: string | null = null;
+
     for (const node of nodes) {
+      // ── Unreachable code detection ──
+      if (config.unreachableCode && afterTerminator !== null) {
+        if (node.type !== 'comment' && node.type !== 'blank') {
+          const range = new vscode.Range(node.line, 0, node.line, node.raw.length);
+          diagnostics.push(new vscode.Diagnostic(
+            range,
+            localize(
+              `Unreachable code after '${afterTerminator}'`,
+              `'${afterTerminator}' の後の到達不能コード`,
+            ),
+            vscode.DiagnosticSeverity.Hint,
+          ));
+          afterTerminator = null;
+        }
+      } else {
+        afterTerminator = null;
+      }
+
+      // Track jump/return for unreachable code
+      if (node.type === 'command' && (node.command === 'jump' || node.command === 'return')) {
+        afterTerminator = node.command;
+      }
+
       // ── Undefined label (jump/call to non-existent label) ──
       if (config.undefinedLabel && node.type === 'command' && LABEL_REF_COMMANDS.has(node.command)) {
         const target = node.target;
@@ -106,6 +169,48 @@ export class RenpyDiagnosticsProvider {
             ),
             vscode.DiagnosticSeverity.Warning,
           ));
+        }
+      }
+
+      // ── Missing resource detection ──
+      if (config.missingResource && node.type === 'command') {
+        const cmd = node.command;
+        if ((cmd === 'scene' || cmd === 'show') && node.target) {
+          const imageTag = node.target.split(/\s+/)[0];
+          if (imageTag && !index.images.has(imageTag)) {
+            const range = node.targetRange
+              ? new vscode.Range(
+                  node.targetRange.start.line, node.targetRange.start.column,
+                  node.targetRange.end.line, node.targetRange.end.column,
+                )
+              : new vscode.Range(node.line, 0, node.line, node.raw.length);
+            diagnostics.push(new vscode.Diagnostic(
+              range,
+              localize(
+                `Image '${imageTag}' is not defined`,
+                `画像 '${imageTag}' は定義されていません`,
+              ),
+              vscode.DiagnosticSeverity.Warning,
+            ));
+          }
+        }
+
+        if (cmd === 'play' || cmd === 'queue' || cmd === 'voice') {
+          const match = node.raw.match(/"([^"]+)"|'([^']+)'/);
+          if (match) {
+            const filePath = match[1] || match[2];
+            if (filePath && !index.assetFiles.has(filePath)) {
+              const range = new vscode.Range(node.line, 0, node.line, node.raw.length);
+              diagnostics.push(new vscode.Diagnostic(
+                range,
+                localize(
+                  `Resource file '${filePath}' not found`,
+                  `リソースファイル '${filePath}' が見つかりません`,
+                ),
+                vscode.DiagnosticSeverity.Warning,
+              ));
+            }
+          }
         }
       }
 
@@ -133,6 +238,20 @@ export class RenpyDiagnosticsProvider {
       if (node.children.length > 0) {
         const childContext = inNonDialogueContext || RenpyDiagnosticsProvider.NON_DIALOGUE_CONTEXTS.has(node.type);
         this.checkNodes(node.children, index, config, diagnostics, childContext);
+      }
+    }
+  }
+
+  /**
+   * Recursively collect all label references (jump/call targets) from AST nodes.
+   */
+  private collectLabelRefs(nodes: RenpyNode[], refs: Set<string>): void {
+    for (const node of nodes) {
+      if (node.type === 'command' && LABEL_REF_COMMANDS.has(node.command) && node.target) {
+        refs.add(node.target);
+      }
+      if (node.children.length > 0) {
+        this.collectLabelRefs(node.children, refs);
       }
     }
   }

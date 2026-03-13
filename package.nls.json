@@ -8,6 +8,9 @@
   "config.diagnostics.undefinedCharacter": "Warn on dialogue with undefined character variables",
   "config.diagnostics.invalidJump": "Warn on invalid jump/call targets",
   "config.diagnostics.indentation": "Warn on mixed indentation (tabs and spaces)",
+  "config.diagnostics.unusedLabel": "Detect unused labels that are never jumped to or called",
+  "config.diagnostics.missingResource": "Detect references to missing images or audio files",
+  "config.diagnostics.unreachableCode": "Detect code after jump or return that will never execute",
   "config.license.key.description": "RenPy Code Pro license key (purchase on Gumroad)",
   "config.license.key.markdownDescription": "RenPy Code Pro license key. [Purchase on Gumroad](https://y1uda.gumroad.com/l/renpycode) to unlock Pro features.",
   "command.launchGame": "RenPy Code: Launch Game",
@@ -34,5 +37,6 @@
   "command.extractRoute": "RenPy Code: Extract Route...",
   "command.insertDialogue": "RenPy Code: Insert Dialogue",
   "command.renameSymbol": "RenPy Code: Rename Symbol",
-  "command.refreshVariables": "RenPy Code: Refresh Variables"
+  "command.refreshVariables": "RenPy Code: Refresh Variables",
+  "command.profileProject": "RenPy Code: Profile Project Performance"
 }

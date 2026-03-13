@@ -8,6 +8,9 @@
   "config.diagnostics.undefinedCharacter": "未定義キャラクター変数のダイアログを警告",
   "config.diagnostics.invalidJump": "無効なjump/callターゲットを警告",
   "config.diagnostics.indentation": "タブとスペースの混在を警告",
+  "config.diagnostics.unusedLabel": "jump/callされていない未使用ラベルを検出",
+  "config.diagnostics.missingResource": "存在しない画像・音声ファイルの参照を検出",
+  "config.diagnostics.unreachableCode": "jumpやreturnの後にある到達不能コードを検出",
   "config.license.key.description": "RenPy Code Proライセンスキー (Gumroadで購入)",
   "config.license.key.markdownDescription": "RenPy Code Proライセンスキー。[Gumroadで購入](https://y1uda.gumroad.com/l/renpycode)してPro機能をアンロック。",
   "command.launchGame": "RenPy Code: ゲームを起動",
@@ -34,5 +37,6 @@
   "command.extractRoute": "RenPy Code: ルートを抽出...",
   "command.insertDialogue": "RenPy Code: ダイアログを挿入",
   "command.renameSymbol": "RenPy Code: シンボルをリネーム",
-  "command.refreshVariables": "RenPy Code: 変数を更新"
+  "command.refreshVariables": "RenPy Code: 変数を更新",
+  "command.profileProject": "RenPy Code: プロジェクトパフォーマンスプロファイル"
 }

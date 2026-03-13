@@ -15,7 +15,8 @@ export type Feature =
   | 'flow-graph'
   | 'auto-test'
   | 'live-preview'
-  | 'refactoring';
+  | 'refactoring'
+  | 'profiler';
 
 const GUMROAD_PRODUCT_ID = 'renpycode';
 const GUMROAD_VERIFY_URL = 'https://api.gumroad.com/v2/licenses/verify';
@@ -131,6 +132,7 @@ export class LicenseManager {
       'auto-test': vscode.l10n.t('Auto-Test'),
       'live-preview': vscode.l10n.t('Live Preview'),
       'refactoring': vscode.l10n.t('Refactoring Tools'),
+      'profiler': vscode.l10n.t('Performance Profiler'),
     };
 
     const enterKey = vscode.l10n.t('Enter License Key');

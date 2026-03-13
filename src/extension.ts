@@ -52,6 +52,7 @@ import { TestRunnerProvider } from './test-runner/test-runner';
 import { RefactorProvider } from './refactor/refactor-provider';
 import { RenpyDebugSession } from './debugger/debug-adapter';
 import { localize } from './language/i18n';
+import { ProjectProfiler } from './profiler/profiler';
 
 const LANGUAGE_ID = 'renpy';
 
@@ -86,6 +87,9 @@ export function activate(context: vscode.ExtensionContext): void {
       undefinedCharacter: config.get('undefinedCharacter', true),
       invalidJump: config.get('invalidJump', true),
       indentation: config.get('indentation', true),
+      unusedLabel: config.get('unusedLabel', true),
+      missingResource: config.get('missingResource', true),
+      unreachableCode: config.get('unreachableCode', true),
     };
   };
 
@@ -457,6 +461,24 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('renpyCode.renameSymbol', () => {
       vscode.commands.executeCommand('editor.action.rename');
+    }),
+  );
+
+  // ══════════════════════════════════════════════════════════
+  //  PRO: Performance Profiler
+  // ══════════════════════════════════════════════════════════
+
+  const profiler = new ProjectProfiler(getIndex);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('renpyCode.profileProject', async () => {
+      if (!(await licenseManager.requirePro('profiler'))) return;
+
+      if (indexer.getIndex().files.size === 0) {
+        await indexer.indexWorkspace();
+      }
+
+      profiler.profileAndShow();
     }),
   );
 
