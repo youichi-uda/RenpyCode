@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RenPy Code — The Complete Ren'Py IDE for VS Code | Debugger, Flow Graph, Live Preview</title>
+  <meta name="description" content="RenPy Code is the most powerful VS Code extension for Ren'Py visual novel development. Free syntax highlighting, autocompletion, diagnostics. Pro features: DAP debugger, story flow graph, live preview, heatmap, asset manager, translation dashboard. $5 lifetime license.">
+  <meta name="keywords" content="Ren'Py, VS Code, extension, visual novel, debugger, IDE, autocompletion, syntax highlighting, flow graph, live preview, asset manager, translation, heatmap, renpy vscode, ビジュアルノベル, レンパイ">
+  <meta name="author" content="abyo-software">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23a78bfa'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-size='18' font-weight='900' fill='white'>R</text></svg>">
+  <link rel="canonical" href="https://renpy-code.abyo.net/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RenPy Code — The Complete Ren'Py IDE for VS Code">
+  <meta property="og:description" content="30+ language features free. Debugger, flow graph, live preview for $5. The only VS Code extension that turns Ren'Py development into a first-class IDE experience.">
+  <meta property="og:url" content="https://renpy-code.abyo.net/">
+  <meta property="og:site_name" content="RenPy Code">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://renpy-code.abyo.net/img/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="RenPy Code — The Complete Ren'Py IDE for VS Code">
+  <meta name="twitter:description" content="30+ language features free. DAP debugger, story flow graph, live preview, heatmap, asset manager for $5 lifetime.">
+  <meta name="twitter:image" content="https://renpy-code.abyo.net/img/og-image.png">
+
+  <!-- Structured Data: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "RenPy Code",
+    "alternateName": ["RenPy Code Pro", "Ren'Py VS Code Extension"],
+    "description": "The most comprehensive VS Code extension for Ren'Py visual novel development. Includes 30+ language features for free, with Pro features like DAP debugger, story flow graph, live preview, heatmap, asset manager, and translation dashboard.",
+    "applicationCategory": "DeveloperApplication",
+    "applicationSubCategory": "IDE Extension",
+    "operatingSystem": "Windows, macOS, Linux",
+    "softwareRequirements": "Visual Studio Code 1.85+, Ren'Py SDK 7.x or 8.x",
+    "url": "https://renpy-code.abyo.net/",
+    "downloadUrl": "https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code",
+    "installUrl": "vscode:extension/abyo-software.renpy-code",
+    "codeRepository": "https://github.com/youichi-uda/renpy-code",
+    "author": {
+      "@type": "Organization",
+      "name": "abyo-software",
+      "url": "https://abyo.net"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "USD",
+        "description": "30+ language features including syntax, completion, diagnostics, definition, symbols, CodeLens, snippets, color picker, folding, game launch, lint, warp"
+      },
+      {
+        "@type": "Offer",
+        "name": "Pro",
+        "price": "5.00",
+        "priceCurrency": "USD",
+        "description": "All free features plus DAP debugger, story flow graph, live preview, variable tracker, heatmap, asset manager, translation dashboard, rename refactoring, test runner",
+        "url": "https://y1uda.gumroad.com/l/renpycode"
+      }
+    ],
+    "featureList": [
+      "Syntax highlighting with TextMate grammar and semantic tokens",
+      "Context-aware autocompletion for 100+ Ren'Py statements",
+      "Real-time diagnostics for undefined labels, characters, and indentation",
+      "Go-to-definition for labels, screens, characters, images, transforms",
+      "Find all references across the entire project",
+      "Document and workspace symbols with outline view",
+      "40 code snippets for common Ren'Py patterns",
+      "Color picker for hex colors in Character definitions",
+      "CodeLens showing reference counts on labels and screens",
+      "Inlay hints showing character display names and jump targets",
+      "Call hierarchy for label relationships",
+      "Signature help for built-in constructors",
+      "Interactive DAP debugger with breakpoints and variable inspection",
+      "Story flow graph visualization with Mermaid.js",
+      "Live preview with bridge-based screenshot capture",
+      "Playtest heatmap showing visit frequency",
+      "Asset manager with unused asset detection",
+      "Translation dashboard with completion tracking",
+      "Safe rename refactoring for labels, characters, and screens",
+      "Automated test runner for Ren'Py testcases",
+      "English and Japanese localization"
+    ],
+    "screenshot": "https://renpy-code.abyo.net/img/og-image.png",
+    "softwareVersion": "0.1.0",
+    "programmingLanguage": "TypeScript",
+    "inLanguage": ["en", "ja"]
+  }
+  </script>
+
+  <!-- Structured Data: FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is RenPy Code?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "RenPy Code is a VS Code extension that provides a complete IDE experience for Ren'Py visual novel development. The free tier includes 30+ language features like syntax highlighting, autocompletion, diagnostics, go-to-definition, symbols, snippets, and game launch. The Pro tier ($5 lifetime) adds a DAP debugger, story flow graph, live preview, heatmap, asset manager, translation dashboard, rename refactoring, and test runner."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is RenPy Code free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. RenPy Code has a generous free tier that covers all features offered by competing extensions — syntax highlighting, autocompletion, diagnostics, go-to-definition, find references, symbols, snippets, color picker, CodeLens, game launch, lint, and warp. Pro features like the debugger, flow graph, and live preview require a one-time $5 license."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is RenPy Code different from the official Ren'Py Language extension?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The official Ren'Py Language extension provides basic syntax highlighting and autocompletion. RenPy Code goes far beyond that with real-time diagnostics for undefined labels and characters, call hierarchy, inlay hints, semantic tokens, CodeLens, signature help, code actions, and 40 snippets — all for free. The Pro tier adds features no other extension offers: a real DAP debugger with breakpoints, story flow visualization, live game preview, playtest heatmaps, asset management, and translation tracking."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does RenPy Code support debugging Ren'Py games?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. RenPy Code Pro includes a full Debug Adapter Protocol (DAP) implementation that integrates with VS Code's built-in debugger UI. You can set breakpoints in .rpy files, step through dialogue and Python code, inspect variables in the Variables panel, view the call stack, and evaluate expressions — all without leaving VS Code. This is the only VS Code extension that provides real breakpoint debugging for Ren'Py."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What Ren'Py versions are supported?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "RenPy Code supports Ren'Py SDK 7.x and 8.x on Windows, macOS, and Linux. The extension analyzes .rpy script files and works with any project structure that follows Ren'Py conventions."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is the source code available?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. RenPy Code is developed on GitHub at github.com/youichi-uda/renpy-code. The source code is publicly available under a commercial license. You can inspect the code, report issues, and contribute. The Pro features require a $5 license key purchased from Gumroad."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does RenPy Code work with Japanese (日本語) projects?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. RenPy Code has full English and Japanese localization. All commands, diagnostics messages, hover documentation, and UI elements are displayed in your VS Code language setting. The translation dashboard also helps manage multi-language visual novel projects."
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Structured Data: BreadcrumbList -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://renpy-code.abyo.net/" },
+      { "@type": "ListItem", "position": 2, "name": "Features", "item": "https://renpy-code.abyo.net/#features" },
+      { "@type": "ListItem", "position": 3, "name": "Pro", "item": "https://renpy-code.abyo.net/#pro" },
+      { "@type": "ListItem", "position": 4, "name": "Comparison", "item": "https://renpy-code.abyo.net/#comparison" },
+      { "@type": "ListItem", "position": 5, "name": "FAQ", "item": "https://renpy-code.abyo.net/#faq" }
+    ]
+  }
+  </script>
+
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-card-hover: #1a1a2e;
+      --border: #1e1e2e;
+      --text: #e4e4e7;
+      --text-dim: #9ca3af;
+      --text-bright: #ffffff;
+      --accent-blue: #60a5fa;
+      --accent-purple: #a78bfa;
+      --accent-pink: #f472b6;
+      --accent-green: #34d399;
+      --accent-orange: #fb923c;
+      --accent-red: #f87171;
+      --accent-cyan: #22d3ee;
+      --gradient-hero: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+      --gradient-cta: linear-gradient(135deg, #a78bfa 0%, #f472b6 100%);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent-blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; }
+    code { font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace; background: #1e1e2e; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+    /* ── Layout ── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 80px 0; }
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-purple);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      color: var(--text-bright);
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .section-desc {
+      font-size: 17px;
+      color: var(--text-dim);
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    /* ── Navigation ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--gradient-hero);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { color: var(--text-dim); font-size: 14px; font-weight: 500; transition: color 0.2s; }
+    .nav-links a:hover { color: var(--text-bright); text-decoration: none; }
+    .nav-cta {
+      background: var(--gradient-cta);
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: opacity 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.9; text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 140px 0 100px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--accent-purple);
+      margin-bottom: 24px;
+      font-weight: 500;
+    }
+    .hero-badge-dot { width: 6px; height: 6px; background: var(--accent-green); border-radius: 50%; }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      color: var(--text-bright);
+    }
+    .hero h1 .gradient {
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(17px, 2vw, 20px);
+      color: var(--text-dim);
+      max-width: 680px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+    .hero-ctas { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--gradient-cta);
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.9; text-decoration: none; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--bg-card-hover); text-decoration: none; transform: translateY(-1px); }
+    .btn-icon { font-size: 18px; }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 64px 0 0;
+    }
+    .stat-item {
+      background: var(--bg-card);
+      padding: 28px 20px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-bright);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-value.blue { color: var(--accent-blue); }
+    .stat-value.purple { color: var(--accent-purple); }
+    .stat-value.pink { color: var(--accent-pink); }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-label { font-size: 13px; color: var(--text-dim); }
+
+    /* ── Free Features Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: all 0.3s;
+    }
+    .feature-card:hover {
+      border-color: rgba(167, 139, 250, 0.3);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+    .icon-blue { background: rgba(96, 165, 250, 0.15); color: var(--accent-blue); }
+    .icon-purple { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); }
+    .icon-pink { background: rgba(244, 114, 182, 0.15); color: var(--accent-pink); }
+    .icon-green { background: rgba(52, 211, 153, 0.15); color: var(--accent-green); }
+    .icon-orange { background: rgba(251, 146, 60, 0.15); color: var(--accent-orange); }
+    .icon-cyan { background: rgba(34, 211, 238, 0.15); color: var(--accent-cyan); }
+
+    /* ── Pro Section ── */
+    .pro-section { background: linear-gradient(180deg, var(--bg) 0%, #0e0e1a 50%, var(--bg) 100%); }
+    .pro-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .pro-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+    .pro-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+    .pro-card:hover {
+      border-color: rgba(244, 114, 182, 0.3);
+      transform: translateY(-2px);
+    }
+    .pro-card.card-debugger::before { background: var(--accent-red); }
+    .pro-card.card-flow::before { background: var(--accent-purple); }
+    .pro-card.card-preview::before { background: var(--accent-blue); }
+    .pro-card.card-heatmap::before { background: var(--accent-orange); }
+    .pro-card.card-assets::before { background: var(--accent-green); }
+    .pro-card.card-translation::before { background: var(--accent-cyan); }
+    .pro-card.card-rename::before { background: var(--accent-pink); }
+    .pro-card.card-test::before { background: var(--accent-purple); }
+    .pro-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .pro-badge-main { background: rgba(244, 114, 182, 0.15); color: var(--accent-pink); }
+    .pro-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 10px;
+    }
+    .pro-card p {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+    .pro-card ul {
+      list-style: none;
+      margin-top: 12px;
+    }
+    .pro-card ul li {
+      font-size: 13px;
+      color: var(--text-dim);
+      padding: 3px 0;
+    }
+    .pro-card ul li::before {
+      content: '+ ';
+      color: var(--accent-green);
+      font-weight: 700;
+    }
+    .pro-card.card-featured {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: center;
+    }
+    .pro-card.card-featured::before { background: var(--gradient-cta); height: 4px; }
+
+    /* ── Comparison ── */
+    .comparison-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 14px;
+    }
+    .comparison-table th,
+    .comparison-table td {
+      padding: 14px 16px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table th {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .comparison-table th:first-child,
+    .comparison-table td:first-child {
+      text-align: left;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .comparison-table thead th {
+      background: #12121a;
+      border-bottom: 2px solid var(--border);
+      position: relative;
+      z-index: 2;
+    }
+    .comparison-table .col-ours {
+      background: #0f0f18;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .comparison-table thead th.col-ours {
+      background: #17152a;
+      color: var(--accent-purple);
+    }
+    .check { color: var(--accent-green); font-weight: 700; }
+    .cross { color: #555; }
+    .pro-tag {
+      font-size: 9px;
+      background: rgba(244, 114, 182, 0.15);
+      color: var(--accent-pink);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-x: auto;
+    }
+
+    /* ── Setup ── */
+    .setup-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .setup-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(167, 139, 250, 0.15);
+      color: var(--accent-purple);
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+    .setup-step h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 8px;
+    }
+    .setup-step p { font-size: 14px; color: var(--text-dim); line-height: 1.6; }
+    .setup-code {
+      margin-top: 12px;
+      background: #0d0d14;
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 13px;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      color: var(--accent-green);
+      overflow-x: auto;
+    }
+
+    /* ── Pricing ── */
+    .pricing-section { text-align: center; }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .pricing-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 32px;
+      text-align: left;
+    }
+    .pricing-card.featured {
+      border-color: rgba(167, 139, 250, 0.4);
+      position: relative;
+    }
+    .pricing-card.featured::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gradient-cta);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .pricing-tier {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+    .pricing-price {
+      font-size: 48px;
+      font-weight: 900;
+      color: var(--text-bright);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .pricing-price span { font-size: 18px; font-weight: 400; color: var(--text-dim); }
+    .pricing-note {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+    .pricing-features li {
+      font-size: 14px;
+      padding: 6px 0;
+      color: var(--text);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .pricing-features li::before {
+      content: '\2713';
+      color: var(--accent-green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .pricing-btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .pricing-btn-free { background: var(--bg-card-hover); color: var(--text); border: 1px solid var(--border); }
+    .pricing-btn-free:hover { background: #22223a; text-decoration: none; }
+    .pricing-btn-pro { background: var(--gradient-cta); color: #fff; }
+    .pricing-btn-pro:hover { opacity: 0.9; text-decoration: none; }
+
+    /* ── FAQ ── */
+    .faq-list { max-width: 800px; margin: 0 auto; }
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+    }
+    .faq-item summary {
+      padding: 20px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-bright);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary::after {
+      content: '+';
+      font-size: 20px;
+      color: var(--text-dim);
+      transition: transform 0.2s;
+    }
+    .faq-item[open] summary::after { content: '-'; }
+    .faq-answer {
+      padding: 0 0 20px;
+      font-size: 15px;
+      color: var(--text-dim);
+      line-height: 1.7;
+    }
+
+    /* ── CTA ── */
+    .final-cta {
+      text-align: center;
+      padding: 100px 0;
+      background: linear-gradient(180deg, var(--bg) 0%, #100e1f 50%, var(--bg) 100%);
+      position: relative;
+    }
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(167, 139, 250, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .final-cta h2 {
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 900;
+      color: var(--text-bright);
+      margin-bottom: 16px;
+    }
+    .final-cta p {
+      font-size: 18px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-copy {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-dim);
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-bright); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .pro-grid { grid-template-columns: 1fr; }
+      .pro-card.card-featured { grid-template-columns: 1fr; }
+      .setup-steps { grid-template-columns: 1fr; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+      .nav-links { gap: 16px; }
+    }
+    @media (max-width: 600px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-links .nav-hide { display: none; }
+      .hero { padding: 120px 0 60px; }
+      section { padding: 60px 0; }
+      .comparison-table th, .comparison-table td { padding: 10px 8px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ── -->
+  <nav aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo" aria-label="RenPy Code home">
+        <div class="nav-logo-icon" aria-hidden="true">R</div>
+        RenPy Code
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="nav-hide">Features</a>
+        <a href="#pro" class="nav-hide">Pro</a>
+        <a href="#comparison" class="nav-hide">Compare</a>
+        <a href="#faq" class="nav-hide">FAQ</a>
+        <a href="https://github.com/youichi-uda/renpy-code" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://y1uda.gumroad.com/l/renpycode" class="nav-cta" target="_blank" rel="noopener">Get Pro — $5</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ── Hero ── -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="container">
+        <div class="hero-badge">
+          <span class="hero-badge-dot" aria-hidden="true"></span>
+          30+ Features Free &middot; DAP Debugger &middot; Flow Graph &middot; Live Preview
+        </div>
+        <h1 id="hero-title">
+          The Complete <span class="gradient">Ren'Py IDE</span><br>for VS Code
+        </h1>
+        <p class="hero-sub">
+          Stop switching between extensions. RenPy Code gives you everything you need to write, debug, test, and ship visual novels &mdash; all in one extension.
+        </p>
+        <div class="hero-ctas">
+          <a href="https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code" class="btn btn-primary" target="_blank" rel="noopener">
+            <span class="btn-icon" aria-hidden="true">&#9654;</span>
+            Install Free
+          </a>
+          <a href="https://y1uda.gumroad.com/l/renpycode" class="btn btn-secondary" target="_blank" rel="noopener">
+            Unlock Pro &mdash; $5 Lifetime
+          </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar" role="list" aria-label="Extension statistics">
+          <div class="stat-item" role="listitem">
+            <div class="stat-value blue">30+</div>
+            <div class="stat-label">Language Features</div>
+          </div>
+          <div class="stat-item" role="listitem">
+            <div class="stat-value purple">100+</div>
+            <div class="stat-label">Statement Docs</div>
+          </div>
+          <div class="stat-item" role="listitem">
+            <div class="stat-value pink">40</div>
+            <div class="stat-label">Code Snippets</div>
+          </div>
+          <div class="stat-item" role="listitem">
+            <div class="stat-value green">97</div>
+            <div class="stat-label">Passing Tests</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Free Features ── -->
+    <section id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section-label">Free &mdash; Zero Config</div>
+        <h2 id="features-title" class="section-title">Every Feature Competitors Offer, Plus More</h2>
+        <p class="section-desc">
+          Install and go. RenPy Code's free tier covers syntax highlighting, autocompletion, diagnostics, go-to-definition, symbols, and beyond &mdash; no license required.
+        </p>
+        <div class="features-grid" role="list">
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-blue" aria-hidden="true">&#9997;</div>
+            <h3>Syntax Highlighting</h3>
+            <p>TextMate grammar with semantic tokens. Labels, screens, dialogue, Python blocks, ATL transforms, and Screen Language &mdash; all precisely highlighted.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-purple" aria-hidden="true">&#9889;</div>
+            <h3>Smart Autocompletion</h3>
+            <p>Context-aware completions for 100+ Ren'Py statements. Labels after <code>jump</code>/<code>call</code>, characters for dialogue, screens, images, transforms, and transitions.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-pink" aria-hidden="true">&#9888;</div>
+            <h3>Real-Time Diagnostics</h3>
+            <p>Instantly catch undefined labels, undefined characters, invalid jump targets, and mixed indentation &mdash; before you launch the game.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-green" aria-hidden="true">&#10132;</div>
+            <h3>Go-to-Definition &amp; References</h3>
+            <p>F12 to jump to any label, screen, character, image, transform, or variable definition. Shift+F12 to find every reference across the project.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-orange" aria-hidden="true">&#128196;</div>
+            <h3>Hover Docs &amp; Signature Help</h3>
+            <p>Hover over any Ren'Py statement to see documentation in English or Japanese. Signature help for Character, Dissolve, Fade, and more.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-cyan" aria-hidden="true">&#128270;</div>
+            <h3>Symbols &amp; CodeLens</h3>
+            <p>Outline view with all labels, screens, characters, images, and transforms. CodeLens shows reference counts directly above labels and screens.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-blue" aria-hidden="true">&#127912;</div>
+            <h3>Color Picker</h3>
+            <p>Visual color swatches and picker for <code>#rrggbb</code> hex values in Character defines and style properties. Edit colors without leaving the editor.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-purple" aria-hidden="true">&#128221;</div>
+            <h3>40 Snippets</h3>
+            <p>Type <code>label</code>, <code>menu</code>, <code>screen</code>, <code>character</code>, or <code>transform</code> and press Tab. Snippets for 40 common Ren'Py patterns with placeholders.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-green" aria-hidden="true">&#128640;</div>
+            <h3>Launch, Lint &amp; Warp</h3>
+            <p>Launch your game, run lint, or warp to any line or label from the command palette. Configure your SDK path once and go.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-pink" aria-hidden="true">&#128279;</div>
+            <h3>Call Hierarchy &amp; Inlay Hints</h3>
+            <p>Trace incoming/outgoing calls between labels. Inlay hints show character display names inline and link targets with file:line info.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-orange" aria-hidden="true">&#128161;</div>
+            <h3>Code Actions</h3>
+            <p>Quick fixes for common issues: create a missing label at the end of the file, or insert a character define at the top. One click to fix diagnostics.</p>
+          </article>
+          <article class="feature-card" role="listitem">
+            <div class="feature-icon icon-cyan" aria-hidden="true">&#127760;</div>
+            <h3>English &amp; Japanese</h3>
+            <p>All commands, diagnostics, hover docs, and UI elements are available in English and Japanese. Follows your VS Code language setting.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pro Features ── -->
+    <section id="pro" class="pro-section" aria-labelledby="pro-title">
+      <div class="container">
+        <div class="section-label">Pro &mdash; $5 Lifetime License</div>
+        <h2 id="pro-title" class="section-title">Features No Other Extension Has</h2>
+        <p class="section-desc">
+          A real debugger. Story flow visualization. Live game preview. Asset management. Translation tracking. All for the price of a coffee.
+        </p>
+        <div class="pro-grid">
+          <!-- Featured: Debugger -->
+          <div class="pro-card card-featured card-debugger">
+            <div>
+              <span class="pro-badge pro-badge-main">Pro</span>
+              <h3>Interactive Debugger (DAP)</h3>
+              <p>The first and only real DAP debugger for Ren'Py in VS Code. Set breakpoints in .rpy files, step through dialogue and Python code, inspect variables, view the call stack, and evaluate expressions &mdash; all in VS Code's native debug UI.</p>
+              <ul>
+                <li>Breakpoints in .rpy files</li>
+                <li>Step over / into / out</li>
+                <li>Variable inspection (store.*)</li>
+                <li>Call stack navigation</li>
+                <li>Debug console evaluation</li>
+              </ul>
+            </div>
+            <div class="setup-code" role="img" aria-label="Debug session example">
+<span style="color:#f87171">&#9679;</span> Breakpoint hit at script.rpy:42
+<span style="color:#60a5fa">&#8594;</span> label start:
+     e "Welcome to the game!"
+     <span style="color:#fb923c">$ points = 0</span>  <span style="color:#555"># Variables: points=0</span>
+     menu:
+         "Go left":
+             <span style="color:#34d399">jump left_path</span>
+<span style="color:#9ca3af">Call Stack:</span>
+  <span style="color:#a78bfa">start</span> (script.rpy:42)
+  <span style="color:#9ca3af">_main</span>
+            </div>
+          </div>
+
+          <div class="pro-card card-flow">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Story Flow Graph</h3>
+            <p>Interactive Mermaid.js visualization of your entire story structure. See every label, jump, call, and menu choice at a glance. Click any node to jump to its source.</p>
+            <ul>
+              <li>Label nodes with dialogue counts</li>
+              <li>Jump, call, and choice edges</li>
+              <li>Dead-end detection (red nodes)</li>
+              <li>Click-to-navigate to source</li>
+            </ul>
+          </div>
+
+          <div class="pro-card card-preview">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Live Preview</h3>
+            <p>See your game's current state in a VS Code panel. The bridge captures screenshots from the running game and displays them alongside your code. Gallery mode for reviewing multiple scenes.</p>
+            <ul>
+              <li>Real-time screenshot capture</li>
+              <li>Scene gallery browser</li>
+              <li>Bridge-based communication</li>
+            </ul>
+          </div>
+
+          <div class="pro-card card-heatmap">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Playtest Heatmap</h3>
+            <p>Track which labels players visit and how often. Visualize hot paths and cold spots in your story. Identify unvisited branches before release.</p>
+          </div>
+
+          <div class="pro-card card-assets">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Asset Manager</h3>
+            <p>Visual browser for all images, audio, and video. Detects unused assets costing disk space. Filter by type, usage status, or file size.</p>
+          </div>
+
+          <div class="pro-card card-translation">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Translation Dashboard</h3>
+            <p>Track translation completeness across all languages. See progress bars, missing blocks, and string counts per language at a glance.</p>
+          </div>
+
+          <div class="pro-card card-rename">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Safe Rename Refactoring</h3>
+            <p>Rename labels, characters, or screens across the entire project with F2. All references updated automatically in a single operation.</p>
+          </div>
+
+          <div class="pro-card card-test">
+            <span class="pro-badge pro-badge-main">Pro</span>
+            <h3>Auto Test Runner</h3>
+            <p>Discover and run Ren'Py testcases from VS Code. Run all tests with progress tracking or pick individual tests from a quick picker.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Comparison Table ── -->
+    <section id="comparison" aria-labelledby="comparison-title">
+      <div class="container">
+        <div class="section-label">Why Switch?</div>
+        <h2 id="comparison-title" class="section-title">How RenPy Code Compares</h2>
+        <p class="section-desc">
+          Side-by-side comparison with every Ren'Py VS Code extension on the marketplace.
+        </p>
+        <div class="table-wrap">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th class="col-ours">RenPy Code</th>
+                <th>Ren'Py Language<br><small>(official)</small></th>
+                <th>Launch &amp; Sync</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Syntax Highlighting</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Semantic Tokens</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Autocompletion</td>
+                <td class="col-ours"><span class="check">&#10003;</span> Context-aware</td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Go-to-Definition</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Find All References</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Diagnostics / Linting</td>
+                <td class="col-ours"><span class="check">&#10003;</span> 4 rule types</td>
+                <td><span class="check">&#10003;</span> Limited</td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Call Hierarchy</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>CodeLens</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Inlay Hints</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Signature Help</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Color Picker</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Code Snippets</td>
+                <td class="col-ours"><span class="check">&#10003;</span> 40 snippets</td>
+                <td><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Game Launch</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="check">&#10003;</span></td>
+              </tr>
+              <tr>
+                <td>Warp to Line / Label</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="check">&#10003;</span></td>
+              </tr>
+              <tr>
+                <td>EN + JA Localization</td>
+                <td class="col-ours"><span class="check">&#10003;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>DAP Debugger</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Story Flow Graph</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Live Preview</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Heatmap</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Asset Manager</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Translation Dashboard</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Rename Refactoring</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+              <tr>
+                <td>Test Runner</td>
+                <td class="col-ours"><span class="check">&#10003;</span><span class="pro-tag">Pro</span></td>
+                <td><span class="cross">&mdash;</span></td>
+                <td><span class="cross">&mdash;</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Setup ── -->
+    <section id="setup" aria-labelledby="setup-title">
+      <div class="container">
+        <div class="section-label">Get Started in 60 Seconds</div>
+        <h2 id="setup-title" class="section-title">Install, Configure, Code</h2>
+        <p class="section-desc">No build tools. No language server. No configuration files. Just install and open a .rpy file.</p>
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="step-number">1</div>
+            <h3>Install the Extension</h3>
+            <p>Search "RenPy Code" in the VS Code Extensions panel, or use the command line.</p>
+            <div class="setup-code">code --install-extension abyo-software.renpy-code</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-number">2</div>
+            <h3>Set Your SDK Path</h3>
+            <p>Open Settings and set <code>renpyCode.sdkPath</code> to your Ren'Py SDK directory. Required only for launch, lint, and warp.</p>
+            <div class="setup-code">"renpyCode.sdkPath": "C:/renpy-8.5.2-sdk"</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-number">3</div>
+            <h3>Open a .rpy File</h3>
+            <p>Syntax highlighting, completion, diagnostics, and all free features activate automatically. For Pro features, enter your license key in settings.</p>
+            <div class="setup-code">"renpyCode.license.key": "YOUR-KEY"</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pricing ── -->
+    <section id="pricing" class="pricing-section" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="section-label">Simple Pricing</div>
+        <h2 id="pricing-title" class="section-title">Free Forever, or Unlock Everything for $5</h2>
+        <p class="section-desc" style="margin-left:auto;margin-right:auto;">
+          No subscriptions. No time limits. One payment, lifetime access to every Pro feature and all future updates.
+        </p>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-tier">Free</div>
+            <div class="pricing-price">$0</div>
+            <div class="pricing-note">Free forever</div>
+            <ul class="pricing-features">
+              <li>Syntax highlighting + semantic tokens</li>
+              <li>Context-aware autocompletion</li>
+              <li>Real-time diagnostics (4 rule types)</li>
+              <li>Go-to-definition + find references</li>
+              <li>Document &amp; workspace symbols</li>
+              <li>CodeLens, inlay hints, call hierarchy</li>
+              <li>40 code snippets</li>
+              <li>Color picker</li>
+              <li>Signature help</li>
+              <li>Code actions (quick fixes)</li>
+              <li>Game launch, lint, warp</li>
+              <li>EN + JA localization</li>
+            </ul>
+            <a href="https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code" class="pricing-btn pricing-btn-free" target="_blank" rel="noopener">Install Free</a>
+          </div>
+          <div class="pricing-card featured">
+            <div class="pricing-tier">Pro</div>
+            <div class="pricing-price">$5 <span>one-time</span></div>
+            <div class="pricing-note">Lifetime license &middot; All future updates included</div>
+            <ul class="pricing-features">
+              <li>Everything in Free</li>
+              <li>DAP Debugger (breakpoints, step, inspect)</li>
+              <li>Story flow graph (Mermaid.js)</li>
+              <li>Live preview (bridge screenshots)</li>
+              <li>Variable tracker (static + live)</li>
+              <li>Playtest heatmap</li>
+              <li>Asset manager (unused detection)</li>
+              <li>Translation dashboard</li>
+              <li>Rename refactoring (F2)</li>
+              <li>Auto test runner</li>
+            </ul>
+            <a href="https://y1uda.gumroad.com/l/renpycode" class="pricing-btn pricing-btn-pro" target="_blank" rel="noopener">Get Pro License &mdash; $5</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FAQ ── -->
+    <section id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="section-label">FAQ</div>
+        <h2 id="faq-title" class="section-title">Frequently Asked Questions</h2>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>What is RenPy Code?</summary>
+            <div class="faq-answer">
+              RenPy Code is a VS Code extension that turns VS Code into a full-featured IDE for Ren'Py visual novel development. The free tier includes 30+ language features like syntax highlighting, autocompletion, diagnostics, go-to-definition, find references, symbols, CodeLens, 40 snippets, color picker, game launch, lint, and warp. The Pro tier ($5 one-time) adds a DAP debugger, story flow graph, live preview, heatmap, asset manager, translation dashboard, rename refactoring, and test runner.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Is RenPy Code free to use?</summary>
+            <div class="faq-answer">
+              Yes. The free tier covers all features offered by competing extensions and more. You can use syntax highlighting, autocompletion, diagnostics, definition/references, symbols, snippets, CodeLens, inlay hints, color picker, game launch, lint, and warp without paying anything. Pro features like the debugger, flow graph, and live preview require a one-time $5 license.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>How does the debugger work?</summary>
+            <div class="faq-answer">
+              RenPy Code Pro includes a full Debug Adapter Protocol (DAP) implementation that integrates with VS Code's built-in debugger. A bridge script is injected into the game's directory that hooks into Ren'Py's <code>config.statement_callbacks</code>. This enables real breakpoints, step execution, variable inspection, call stack viewing, and expression evaluation &mdash; all through VS Code's native debug UI. Just press F5 to start debugging.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Can I use RenPy Code alongside the official Ren'Py Language extension?</summary>
+            <div class="faq-answer">
+              While technically possible, we recommend using RenPy Code alone. It provides all the features of the official extension plus many more. Running both may cause duplicate completions, diagnostics, and hover tooltips. If you switch to RenPy Code, you can safely disable the official extension for .rpy files.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>What Ren'Py and VS Code versions are supported?</summary>
+            <div class="faq-answer">
+              RenPy Code supports Ren'Py SDK 7.x and 8.x on Windows, macOS, and Linux. It requires VS Code 1.85 or later. The extension works with any standard Ren'Py project structure.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Is the source code available?</summary>
+            <div class="faq-answer">
+              Yes. RenPy Code is developed publicly on <a href="https://github.com/youichi-uda/renpy-code" target="_blank" rel="noopener">GitHub</a>. The source code is available under a commercial license &mdash; you can read the code, report issues, and submit pull requests. Pro features require a license key purchased from Gumroad.
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>Does it support Japanese (日本語)?</summary>
+            <div class="faq-answer">
+              はい。RenPy Codeは英語と日本語の完全なローカライゼーションに対応しています。コマンド、診断メッセージ、ホバードキュメント、UIのすべてがVS Codeの言語設定に従って表示されます。翻訳ダッシュボードは多言語ビジュアルノベルの管理にも役立ちます。
+            </div>
+          </details>
+          <details class="faq-item">
+            <summary>What happens after I buy a Pro license?</summary>
+            <div class="faq-answer">
+              You receive a license key from Gumroad immediately after purchase. Enter it in VS Code settings (<code>renpyCode.license.key</code>) or use the "RenPy Code: Activate Pro License" command. Pro features unlock instantly. The license is valid forever, including all future updates.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Final CTA ── -->
+    <section class="final-cta" aria-labelledby="cta-title">
+      <div class="container">
+        <h2 id="cta-title">Start Building Better Visual Novels</h2>
+        <p>Install RenPy Code free, or unlock every Pro feature for the price of a coffee.</p>
+        <div class="hero-ctas">
+          <a href="https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code" class="btn btn-primary" target="_blank" rel="noopener">
+            <span class="btn-icon" aria-hidden="true">&#9654;</span>
+            Install Free from Marketplace
+          </a>
+          <a href="https://y1uda.gumroad.com/l/renpycode" class="btn btn-secondary" target="_blank" rel="noopener">
+            Unlock Pro &mdash; $5
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-copy">&copy; 2026 abyo-software. RenPy Code is not affiliated with Ren'Py or Tom Rothamel.</div>
+        <div class="footer-links">
+          <a href="https://github.com/youichi-uda/renpy-code" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code" target="_blank" rel="noopener">VS Code Marketplace</a>
+          <a href="https://y1uda.gumroad.com/l/renpycode" target="_blank" rel="noopener">Gumroad</a>
+          <a href="https://discord.gg/6FVA25mW" target="_blank" rel="noopener">Discord</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

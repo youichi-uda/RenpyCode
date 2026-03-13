@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://renpy-code.abyo.net/sitemap.xml

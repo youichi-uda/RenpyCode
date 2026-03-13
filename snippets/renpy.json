@@ -1,0 +1,327 @@
+{
+  "Label": {
+    "prefix": "label",
+    "body": [
+      "label ${1:name}:",
+      "    $0"
+    ],
+    "description": "Define a label"
+  },
+  "Label with Parameters": {
+    "prefix": "labelp",
+    "body": [
+      "label ${1:name}(${2:params}):",
+      "    $0"
+    ],
+    "description": "Define a label with parameters"
+  },
+  "Menu": {
+    "prefix": "menu",
+    "body": [
+      "menu:",
+      "    \"${1:Choice 1}\":",
+      "        $0",
+      "    \"${2:Choice 2}\":",
+      "        pass"
+    ],
+    "description": "Menu with choices"
+  },
+  "Menu with Caption": {
+    "prefix": "menuc",
+    "body": [
+      "menu:",
+      "    \"${1:What do you want to do?}\"",
+      "    \"${2:Choice 1}\":",
+      "        $0",
+      "    \"${3:Choice 2}\":",
+      "        pass"
+    ],
+    "description": "Menu with caption text"
+  },
+  "Character Define": {
+    "prefix": "character",
+    "body": [
+      "define ${1:e} = Character(\"${2:Eileen}\", color=\"${3:#c8ffc8}\")"
+    ],
+    "description": "Define a character"
+  },
+  "Character with Image": {
+    "prefix": "charaimg",
+    "body": [
+      "define ${1:e} = Character(\"${2:Eileen}\", color=\"${3:#c8ffc8}\", image=\"${4:eileen}\")"
+    ],
+    "description": "Define a character with associated image"
+  },
+  "Screen": {
+    "prefix": "screen",
+    "body": [
+      "screen ${1:name}():",
+      "    $0"
+    ],
+    "description": "Define a screen"
+  },
+  "Screen with Tag": {
+    "prefix": "screent",
+    "body": [
+      "screen ${1:name}():",
+      "    tag ${2:menu}",
+      "    $0"
+    ],
+    "description": "Define a screen with tag"
+  },
+  "Image Definition": {
+    "prefix": "image",
+    "body": [
+      "image ${1:name} = \"${2:filename.png}\""
+    ],
+    "description": "Define an image"
+  },
+  "Image ATL": {
+    "prefix": "imageatl",
+    "body": [
+      "image ${1:name}:",
+      "    $0"
+    ],
+    "description": "Define an image with ATL"
+  },
+  "Transform": {
+    "prefix": "transform",
+    "body": [
+      "transform ${1:name}:",
+      "    $0"
+    ],
+    "description": "Define a transform"
+  },
+  "Transform with Parameters": {
+    "prefix": "transformp",
+    "body": [
+      "transform ${1:name}(${2:params}):",
+      "    $0"
+    ],
+    "description": "Define a transform with parameters"
+  },
+  "Init Python": {
+    "prefix": "initpython",
+    "body": [
+      "init python:",
+      "    $0"
+    ],
+    "description": "Init python block"
+  },
+  "Init Python with Priority": {
+    "prefix": "initpythonp",
+    "body": [
+      "init ${1:-1} python:",
+      "    $0"
+    ],
+    "description": "Init python block with priority"
+  },
+  "Python Block": {
+    "prefix": "python",
+    "body": [
+      "python:",
+      "    $0"
+    ],
+    "description": "Python block"
+  },
+  "Define Variable": {
+    "prefix": "define",
+    "body": [
+      "define ${1:name} = ${0:value}"
+    ],
+    "description": "Define a variable (constant)"
+  },
+  "Default Variable": {
+    "prefix": "default",
+    "body": [
+      "default ${1:name} = ${0:value}"
+    ],
+    "description": "Default variable (save-able)"
+  },
+  "If Block": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}:",
+      "    $0"
+    ],
+    "description": "If block"
+  },
+  "If-Else Block": {
+    "prefix": "ifelse",
+    "body": [
+      "if ${1:condition}:",
+      "    $2",
+      "else:",
+      "    $0"
+    ],
+    "description": "If-else block"
+  },
+  "Show": {
+    "prefix": "show",
+    "body": [
+      "show ${1:image}${2: at ${3:center}}"
+    ],
+    "description": "Show an image"
+  },
+  "Scene": {
+    "prefix": "scene",
+    "body": [
+      "scene ${1:bg image}"
+    ],
+    "description": "Scene (background) change"
+  },
+  "Hide": {
+    "prefix": "hide",
+    "body": [
+      "hide ${1:image}"
+    ],
+    "description": "Hide an image"
+  },
+  "With Transition": {
+    "prefix": "with",
+    "body": [
+      "with ${1|dissolve,fade,None,Dissolve(0.5),Fade(0.5\\, 0.0\\, 0.5),MoveTransition(0.5)|}"
+    ],
+    "description": "Transition effect"
+  },
+  "Play Music": {
+    "prefix": "playmusic",
+    "body": [
+      "play music \"${1:audio/music.ogg}\"${2: fadeout ${3:1.0} fadein ${4:1.0}}"
+    ],
+    "description": "Play music"
+  },
+  "Play Sound": {
+    "prefix": "playsound",
+    "body": [
+      "play sound \"${1:audio/sound.ogg}\""
+    ],
+    "description": "Play sound effect"
+  },
+  "Stop Music": {
+    "prefix": "stopmusic",
+    "body": [
+      "stop music${1: fadeout ${2:1.0}}"
+    ],
+    "description": "Stop music"
+  },
+  "Voice": {
+    "prefix": "voice",
+    "body": [
+      "voice \"${1:audio/voice.ogg}\""
+    ],
+    "description": "Play voice"
+  },
+  "Jump": {
+    "prefix": "jump",
+    "body": [
+      "jump ${1:label_name}"
+    ],
+    "description": "Jump to label"
+  },
+  "Call": {
+    "prefix": "call",
+    "body": [
+      "call ${1:label_name}"
+    ],
+    "description": "Call label"
+  },
+  "Return": {
+    "prefix": "return",
+    "body": [
+      "return"
+    ],
+    "description": "Return from call"
+  },
+  "Style": {
+    "prefix": "style",
+    "body": [
+      "style ${1:name}:",
+      "    $0"
+    ],
+    "description": "Define a style"
+  },
+  "Style Inheriting": {
+    "prefix": "styleis",
+    "body": [
+      "style ${1:name} is ${2:parent}:",
+      "    $0"
+    ],
+    "description": "Define a style inheriting from parent"
+  },
+  "Testcase": {
+    "prefix": "testcase",
+    "body": [
+      "testcase ${1:name}:",
+      "    $0"
+    ],
+    "description": "Define a test case"
+  },
+  "Translate": {
+    "prefix": "translate",
+    "body": [
+      "translate ${1:language} ${2:label_hash}:",
+      "    $0"
+    ],
+    "description": "Translation block"
+  },
+  "Textbutton": {
+    "prefix": "textbutton",
+    "body": [
+      "textbutton _(\"${1:label}\") action ${2:NullAction()}"
+    ],
+    "description": "Textbutton with action"
+  },
+  "Imagebutton": {
+    "prefix": "imagebutton",
+    "body": [
+      "imagebutton:",
+      "    idle \"${1:button_idle.png}\"",
+      "    hover \"${2:button_hover.png}\"",
+      "    action ${0:NullAction()}"
+    ],
+    "description": "Imagebutton with states"
+  },
+  "Vbox": {
+    "prefix": "vbox",
+    "body": [
+      "vbox:",
+      "    $0"
+    ],
+    "description": "Vertical box container"
+  },
+  "Hbox": {
+    "prefix": "hbox",
+    "body": [
+      "hbox:",
+      "    $0"
+    ],
+    "description": "Horizontal box container"
+  },
+  "Frame": {
+    "prefix": "frame",
+    "body": [
+      "frame:",
+      "    $0"
+    ],
+    "description": "Frame container"
+  },
+  "Viewport": {
+    "prefix": "viewport",
+    "body": [
+      "viewport:",
+      "    scrollbars \"${1|vertical,horizontal,both|}\"",
+      "    $0"
+    ],
+    "description": "Scrollable viewport"
+  },
+  "NVL": {
+    "prefix": "nvl",
+    "body": [
+      "window show",
+      "$0",
+      "window hide"
+    ],
+    "description": "NVL-mode window"
+  }
+}

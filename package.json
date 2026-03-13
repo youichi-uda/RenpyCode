@@ -1,0 +1,307 @@
+{
+  "name": "renpy-code",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
+  "version": "0.1.0",
+  "publisher": "abyo-software",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/youichi-uda/renpy-code.git"
+  },
+  "icon": "images/icon.png",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "l10n": "./l10n",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers",
+    "Linters",
+    "Visualization",
+    "Testing"
+  ],
+  "keywords": [
+    "renpy",
+    "ren'py",
+    "visual novel",
+    "ビジュアルノベル",
+    "レンパイ"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/*.rpy"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "renpy",
+        "aliases": [
+          "Ren'Py",
+          "RenPy"
+        ],
+        "extensions": [
+          ".rpy"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "renpy",
+        "scopeName": "source.renpy",
+        "path": "./syntaxes/renpy.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "renpy",
+        "path": "./snippets/renpy.json"
+      }
+    ],
+    "configurationDefaults": {
+      "[renpy]": {
+        "editor.quickSuggestions": {
+          "other": "on",
+          "comments": "off",
+          "strings": "on"
+        },
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+      }
+    },
+    "configuration": {
+      "title": "%config.title%",
+      "properties": {
+        "renpyCode.sdkPath": {
+          "type": "string",
+          "default": "",
+          "description": "%config.sdkPath.description%"
+        },
+        "renpyCode.diagnostics.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.enable%"
+        },
+        "renpyCode.diagnostics.undefinedLabel": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.undefinedLabel%"
+        },
+        "renpyCode.diagnostics.undefinedCharacter": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.undefinedCharacter%"
+        },
+        "renpyCode.diagnostics.invalidJump": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.invalidJump%"
+        },
+        "renpyCode.diagnostics.indentation": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.diagnostics.indentation%"
+        },
+        "renpyCode.license.key": {
+          "type": "string",
+          "default": "",
+          "description": "%config.license.key.description%",
+          "markdownDescription": "%config.license.key.markdownDescription%"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "renpyCode.launchGame",
+        "title": "%command.launchGame%"
+      },
+      {
+        "command": "renpyCode.lint",
+        "title": "%command.lint%"
+      },
+      {
+        "command": "renpyCode.warpToLine",
+        "title": "%command.warpToLine%"
+      },
+      {
+        "command": "renpyCode.warpToLabel",
+        "title": "%command.warpToLabel%"
+      },
+      {
+        "command": "renpyCode.showFlowGraph",
+        "title": "%command.showFlowGraph%",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "renpyCode.analyzeProject",
+        "title": "%command.analyzeProject%"
+      },
+      {
+        "command": "renpyCode.activateLicense",
+        "title": "%command.activateLicense%"
+      },
+      {
+        "command": "renpyCode.goToDefinition",
+        "title": "%command.goToDefinition%"
+      },
+      {
+        "command": "renpyCode.findAllReferences",
+        "title": "%command.findAllReferences%"
+      },
+      {
+        "command": "renpyCode.showPreview",
+        "title": "%command.showPreview%"
+      },
+      {
+        "command": "renpyCode.showHeatmap",
+        "title": "%command.showHeatmap%"
+      },
+      {
+        "command": "renpyCode.showAssets",
+        "title": "%command.showAssets%"
+      },
+      {
+        "command": "renpyCode.showTranslation",
+        "title": "%command.showTranslation%"
+      },
+      {
+        "command": "renpyCode.runAllTests",
+        "title": "%command.runAllTests%"
+      },
+      {
+        "command": "renpyCode.runTest",
+        "title": "%command.runTest%"
+      },
+      {
+        "command": "renpyCode.extractRoute",
+        "title": "%command.extractRoute%"
+      },
+      {
+        "command": "renpyCode.insertDialogue",
+        "title": "%command.insertDialogue%"
+      },
+      {
+        "command": "renpyCode.renameSymbol",
+        "title": "%command.renameSymbol%"
+      },
+      {
+        "command": "renpyCode.refreshVariables",
+        "title": "%command.refreshVariables%",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "renpyCode.showFlowGraph",
+          "when": "resourceLangId == renpy",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "renpyCode.launchGame",
+          "when": "renpyCode.projectDetected"
+        },
+        {
+          "command": "renpyCode.lint",
+          "when": "renpyCode.projectDetected"
+        },
+        {
+          "command": "renpyCode.warpToLine",
+          "when": "renpyCode.projectDetected && resourceLangId == renpy"
+        },
+        {
+          "command": "renpyCode.warpToLabel",
+          "when": "renpyCode.projectDetected"
+        }
+      ]
+    },
+    "breakpoints": [
+      {
+        "language": "renpy"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "renpy",
+        "label": "%debugger.label%",
+        "languages": [
+          "renpy"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [],
+            "properties": {
+              "gameRoot": {
+                "type": "string",
+                "description": "%debugger.gameRoot.description%",
+                "default": "${workspaceFolder}"
+              }
+            }
+          }
+        },
+        "configurationSnippets": [
+          {
+            "label": "%debugger.snippet.label%",
+            "description": "%debugger.snippet.description%",
+            "body": {
+              "type": "renpy",
+              "request": "launch",
+              "name": "Debug Ren'Py",
+              "gameRoot": "^\"\\${workspaceFolder}\""
+            }
+          }
+        ]
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "renpycode",
+          "title": "RenPy Code",
+          "icon": "$(game)"
+        }
+      ]
+    },
+    "views": {
+      "renpycode": [
+        {
+          "type": "webview",
+          "id": "renpyCode.dashboard",
+          "name": "%view.dashboard%",
+          "when": "renpyCode.projectDetected"
+        },
+        {
+          "id": "renpyCode.variablesView",
+          "name": "%view.variables%",
+          "when": "renpyCode.projectDetected"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "tsc -p ./",
+    "compile:esbuild": "node esbuild.mjs",
+    "package": "node esbuild.mjs --production",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/debugadapter": "^1.65.0",
+    "@vscode/debugprotocol": "^1.65.0",
+    "@vscode/l10n-dev": "^0.0.35",
+    "esbuild": "^0.27.3",
+    "typescript": "^5.3.0",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "@vscode/debugadapter": "^1.65.0"
+  }
+}

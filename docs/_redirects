@@ -1,0 +1,6 @@
+# Redirect common paths
+/github  https://github.com/youichi-uda/renpy-code  302
+/buy     https://y1uda.gumroad.com/l/renpycode       302
+/pro     https://y1uda.gumroad.com/l/renpycode       302
+/install https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code 302
+/discord https://discord.gg/6FVA25mW                  302
