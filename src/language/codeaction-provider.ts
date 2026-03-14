@@ -21,7 +21,7 @@ export class RenpyCodeActionProvider implements vscode.CodeActionProvider {
       const msg = diagnostic.message;
 
       // Quick fix: create missing label
-      const labelMatch = msg.match(/Undefined label '(\w+)'/);
+      const labelMatch = msg.match(/(?:Undefined label|未定義のラベル) '(\w+)'/);
       if (labelMatch) {
         const labelName = labelMatch[1];
         const action = new vscode.CodeAction(
@@ -41,7 +41,7 @@ export class RenpyCodeActionProvider implements vscode.CodeActionProvider {
       }
 
       // Quick fix: define missing character
-      const charMatch = msg.match(/Undefined character '(\w+)'/);
+      const charMatch = msg.match(/(?:Undefined character|未定義のキャラクター) '(\w+)'(?:\s|$)/);
       if (charMatch) {
         const charName = charMatch[1];
         const action = new vscode.CodeAction(
