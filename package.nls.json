@@ -38,5 +38,6 @@
   "command.insertDialogue": "RenPy Code: Insert Dialogue",
   "command.renameSymbol": "RenPy Code: Rename Symbol",
   "command.refreshVariables": "RenPy Code: Refresh Variables",
-  "command.profileProject": "RenPy Code: Profile Project Performance"
+  "command.profileProject": "RenPy Code: Profile Project Performance",
+  "command.killGame": "RenPy Code: Kill Game"
 }

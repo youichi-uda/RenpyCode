@@ -208,6 +208,10 @@
       {
         "command": "renpyCode.profileProject",
         "title": "%command.profileProject%"
+      },
+      {
+        "command": "renpyCode.killGame",
+        "title": "%command.killGame%"
       }
     ],
     "menus": {
@@ -216,6 +220,13 @@
           "command": "renpyCode.showFlowGraph",
           "when": "resourceLangId == renpy",
           "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "renpyCode.warpToLine",
+          "when": "renpyCode.projectDetected && resourceLangId == renpy",
+          "group": "navigation@10"
         }
       ],
       "commandPalette": [
@@ -233,6 +244,10 @@
         },
         {
           "command": "renpyCode.warpToLabel",
+          "when": "renpyCode.projectDetected"
+        },
+        {
+          "command": "renpyCode.killGame",
           "when": "renpyCode.projectDetected"
         }
       ]

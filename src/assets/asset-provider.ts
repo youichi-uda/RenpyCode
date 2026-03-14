@@ -20,6 +20,8 @@ interface AssetInfo {
 
 export class AssetProvider {
   private _panel?: vscode.WebviewPanel;
+  private _watcher?: vscode.FileSystemWatcher;
+  private _refreshTimer?: NodeJS.Timeout;
 
   constructor(private getIndex: () => ProjectIndex) {}
 
@@ -33,13 +35,45 @@ export class AssetProvider {
       'renpyCode.assets',
       localize('RenPy Code: Asset Manager', 'RenPy Code: アセットマネージャ'),
       vscode.ViewColumn.One,
-      { enableScripts: true },
+      { enableScripts: true, retainContextWhenHidden: true },
     );
 
-    this._panel.onDidDispose(() => { this._panel = undefined; });
+    this._panel.onDidDispose(() => {
+      this._panel = undefined;
+      this._watcher?.dispose();
+      this._watcher = undefined;
+    });
+    this._panel.webview.onDidReceiveMessage(msg => this.handleMessage(msg));
 
+    // Watch for asset file changes
+    this.startWatching();
+
+    await this.refresh();
+  }
+
+  private async refresh(): Promise<void> {
+    if (!this._panel) return;
     const assets = await this.scanAssets();
     this._panel.webview.html = this.renderHtml(assets);
+  }
+
+  private startWatching(): void {
+    this._watcher?.dispose();
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) return;
+
+    this._watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(path.join(workspaceFolder.uri.fsPath, 'game'), '**/*.{png,jpg,jpeg,webp,ogg,mp3,wav,opus,mp4,webm,ogv}'),
+    );
+
+    const scheduleRefresh = () => {
+      // Debounce to avoid rapid re-scans
+      if (this._refreshTimer) clearTimeout(this._refreshTimer);
+      this._refreshTimer = setTimeout(() => this.refresh(), 500);
+    };
+
+    this._watcher.onDidCreate(scheduleRefresh);
+    this._watcher.onDidDelete(scheduleRefresh);
   }
 
   /**
@@ -152,6 +186,8 @@ export class AssetProvider {
   th { text-align: left; padding: 6px 8px; background: var(--vscode-editor-background); border-bottom: 1px solid var(--vscode-panel-border); }
   td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border); }
   tr.unused { background: rgba(244, 67, 54, 0.1); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--vscode-list-hoverBackground); }
   .type-badge { padding: 1px 6px; border-radius: 3px; font-size: 10px; }
   .type-image { background: #2196F3; color: white; }
   .type-audio { background: #4CAF50; color: white; }
@@ -161,37 +197,38 @@ export class AssetProvider {
 </style>
 </head>
 <body>
-  <h2>Asset Manager</h2>
+  <h2>${localize('Asset Manager', 'アセットマネージャ')}</h2>
   <div class="summary">
-    <div class="summary-item"><div class="summary-value">${images.length}</div><div class="summary-label">Images</div></div>
-    <div class="summary-item"><div class="summary-value">${audio.length}</div><div class="summary-label">Audio</div></div>
-    <div class="summary-item"><div class="summary-value">${video.length}</div><div class="summary-label">Video</div></div>
-    <div class="summary-item"><div class="summary-value">${unused.length}</div><div class="summary-label">Unused</div></div>
-    <div class="summary-item"><div class="summary-value">${Math.round(totalSize / 1024)}MB</div><div class="summary-label">Total Size</div></div>
+    <div class="summary-item"><div class="summary-value">${images.length}</div><div class="summary-label">${localize('Images', '画像')}</div></div>
+    <div class="summary-item"><div class="summary-value">${audio.length}</div><div class="summary-label">${localize('Audio', '音声')}</div></div>
+    <div class="summary-item"><div class="summary-value">${video.length}</div><div class="summary-label">${localize('Video', '動画')}</div></div>
+    <div class="summary-item"><div class="summary-value">${unused.length}</div><div class="summary-label">${localize('Unused', '未使用')}</div></div>
+    <div class="summary-item"><div class="summary-value">${Math.round(totalSize / 1024)}MB</div><div class="summary-label">${localize('Total Size', '合計サイズ')}</div></div>
   </div>
 
   <div class="filter">
-    <button class="active" onclick="filterAssets('all', this)">All (${assets.length})</button>
-    <button onclick="filterAssets('image', this)">Images (${images.length})</button>
-    <button onclick="filterAssets('audio', this)">Audio (${audio.length})</button>
-    <button onclick="filterAssets('video', this)">Video (${video.length})</button>
-    <button onclick="filterAssets('unused', this)">Unused (${unused.length})</button>
+    <button class="active" onclick="filterAssets('all', this)">${localize('All', 'すべて')} (${assets.length})</button>
+    <button onclick="filterAssets('image', this)">${localize('Images', '画像')} (${images.length})</button>
+    <button onclick="filterAssets('audio', this)">${localize('Audio', '音声')} (${audio.length})</button>
+    <button onclick="filterAssets('video', this)">${localize('Video', '動画')} (${video.length})</button>
+    <button onclick="filterAssets('unused', this)">${localize('Unused', '未使用')} (${unused.length})</button>
   </div>
 
   <table id="assetTable">
-    <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Status</th><th>Path</th></tr></thead>
+    <thead><tr><th>${localize('Name', '名前')}</th><th>${localize('Type', '種類')}</th><th>${localize('Size', 'サイズ')}</th><th>${localize('Status', '状態')}</th><th>${localize('Path', 'パス')}</th></tr></thead>
     <tbody>
-      ${assets.map(a => `<tr class="${a.used ? '' : 'unused'}" data-type="${a.type}" data-used="${a.used}">
+      ${assets.map(a => `<tr class="${a.used ? '' : 'unused'}" data-type="${a.type}" data-used="${a.used}" data-path="${a.path}">
         <td>${a.name}</td>
         <td><span class="type-badge type-${a.type}">${a.type}</span></td>
         <td>${a.sizeKb}KB</td>
-        <td class="${a.used ? 'status-used' : 'status-unused'}">${a.used ? '✓ Used' : '✗ Unused'}</td>
+        <td class="${a.used ? 'status-used' : 'status-unused'}">${a.used ? localize('✓ Used', '✓ 使用中') : localize('✗ Unused', '✗ 未使用')}</td>
         <td style="font-size:10px;color:var(--vscode-descriptionForeground)">${a.path}</td>
       </tr>`).join('\n')}
     </tbody>
   </table>
 
   <script>
+    const vscode = acquireVsCodeApi();
     function filterAssets(type, btn) {
       document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -201,12 +238,28 @@ export class AssetProvider {
         tr.style.display = tr.dataset.type === type ? '' : 'none';
       });
     }
+    document.querySelectorAll('#assetTable tbody tr').forEach(tr => {
+      tr.addEventListener('click', () => {
+        vscode.postMessage({ command: 'openFile', path: tr.dataset.path });
+      });
+    });
   </script>
 </body>
 </html>`;
   }
 
+  private async handleMessage(msg: { command: string; path?: string }): Promise<void> {
+    if (msg.command === 'openFile' && msg.path) {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        const fileUri = vscode.Uri.joinPath(workspaceFolder.uri, msg.path);
+        await vscode.commands.executeCommand('vscode.open', fileUri);
+      }
+    }
+  }
+
   dispose(): void {
+    this._watcher?.dispose();
     this._panel?.dispose();
   }
 }

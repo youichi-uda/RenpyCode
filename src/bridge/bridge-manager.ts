@@ -11,6 +11,7 @@ import * as path from 'path';
 export interface BridgeState {
   connected: boolean;
   label?: string;
+  scene?: string;
   variables?: Record<string, unknown>;
   timestamp?: number;
 }
@@ -227,13 +228,22 @@ export class BridgeManager {
    */
   installBridge(extensionPath: string, projectRoot: string): boolean {
     try {
-      const bridgeSrc = path.join(extensionPath, 'bridge', 'bridge-script.rpy');
       const bridgeDst = path.join(projectRoot, 'game', '_mcp_bridge.rpy');
 
-      if (!fs.existsSync(bridgeSrc)) return false;
+      // Try copying from extension's src/bridge first
+      const candidates = [
+        path.join(extensionPath, 'bridge', 'bridge-script.rpy'),
+        path.join(extensionPath, 'src', 'bridge', 'bridge-script.rpy'),
+      ];
 
-      fs.copyFileSync(bridgeSrc, bridgeDst);
-      return true;
+      for (const src of candidates) {
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, bridgeDst);
+          return true;
+        }
+      }
+
+      return false;
     } catch {
       return false;
     }
@@ -264,15 +274,22 @@ export class BridgeManager {
     const connected = this.isConnected();
     const statusData = connected ? this.readStatus() : null;
 
+    // Only update label/scene from heartbeat responses (command responses don't have these fields)
+    const isHeartbeat = statusData?.action === 'heartbeat';
+    const label = isHeartbeat ? statusData?.label as string | undefined : this._lastState.label;
+    const scene = isHeartbeat ? statusData?.scene as string | undefined : this._lastState.scene;
+
     const newState: BridgeState = {
       connected,
-      label: statusData?.label as string | undefined,
+      label,
+      scene,
       variables: statusData?.variables as Record<string, unknown> | undefined,
       timestamp: Date.now(),
     };
 
     const changed = newState.connected !== this._lastState.connected ||
-                    newState.label !== this._lastState.label;
+                    newState.label !== this._lastState.label ||
+                    newState.scene !== this._lastState.scene;
 
     this._lastState = newState;
     if (changed) {

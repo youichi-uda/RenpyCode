@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RenpyCompletionProvider } from '../src/language/completion-provider';
-import { Position, CompletionItemKind } from 'vscode';
+import { Position, CompletionItemKind, CompletionList } from 'vscode';
 import { ProjectIndex } from '../src/parser/types';
 
 function mockDocument(text: string) {
@@ -22,6 +22,11 @@ function mockDocument(text: string) {
 
 const token = { isCancellationRequested: false } as any;
 const defaultContext = { triggerKind: 0 } as any;
+
+/** Extract items from CompletionList */
+function getItems(result: CompletionList) {
+  return result.items;
+}
 
 function emptyIndex(): ProjectIndex {
   return {
@@ -84,8 +89,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    jump s');
       const pos = new Position(0, 10);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('start');
       expect(names).toContain('chapter1');
@@ -99,8 +104,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    call h');
       const pos = new Position(0, 10);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('start');
       expect(names).toContain('helper');
@@ -109,16 +114,11 @@ describe('RenpyCompletionProvider', () => {
     it('returns labels after "jump " with no partial typed', () => {
       const idx = indexWithLabels('start');
       const provider = new RenpyCompletionProvider(() => idx);
-      // "jump " followed by cursor — the regex expects \w* so empty word is fine
-      // but we need at least "jump " with \w* matching empty — let's check
-      // regex is /^(jump|call)\s+\w*$/ — "jump " has trailing space + empty \w* → matches
-      // Actually "jump " trimmed is "jump " which won't match \w*$ after \s+
-      // We need "jump x" or just "jump " — let me test with partial word
       const doc = mockDocument('jump s');
       const pos = new Position(0, 6);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items.map(i => i.label)).toContain('start');
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      expect(items.map(i => typeof i.label === 'string' ? i.label : i.label.label)).toContain('start');
     });
   });
 
@@ -132,12 +132,12 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('label start:\n    e');
       const pos = new Position(1, 5);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('e');
       expect(names).toContain('s');
-      // Character items use Variable kind
+      // Character items have detail containing character name
       const charItems = items.filter(i => i.kind === CompletionItemKind.Variable);
       expect(charItems.length).toBe(2);
     });
@@ -148,7 +148,7 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('label start:\n    s');
       const pos = new Position(1, 5);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       // Should include both character completions and statement completions
       const hasKeywords = items.some(i => i.kind === CompletionItemKind.Keyword);
       expect(hasKeywords).toBe(true);
@@ -160,7 +160,7 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    $ foo');
       const pos = new Position(0, 9);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       const charItems = items.filter(i => i.kind === CompletionItemKind.Variable);
       expect(charItems.length).toBe(0);
     });
@@ -173,8 +173,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    show screen m');
       const pos = new Position(0, 17);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('main_menu');
       expect(names).toContain('preferences');
@@ -188,8 +188,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    call screen c');
       const pos = new Position(0, 17);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items.map(i => i.label)).toContain('confirm');
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      expect(items.map(i => typeof i.label === 'string' ? i.label : i.label.label)).toContain('confirm');
     });
 
     it('returns screens after "use "', () => {
@@ -198,8 +198,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    use n');
       const pos = new Position(0, 9);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items.map(i => i.label)).toContain('navigation');
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      expect(items.map(i => typeof i.label === 'string' ? i.label : i.label.label)).toContain('navigation');
     });
   });
 
@@ -210,12 +210,14 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    show e');
       const pos = new Position(0, 10);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('eileen happy');
       expect(names).toContain('sylvie normal');
-      expect(items.every(i => i.kind === CompletionItemKind.Color)).toBe(true);
+      expect(names).toContain('screen'); // "show screen <name>" keyword
+      const imageItems = items.filter(i => i.kind === CompletionItemKind.Color);
+      expect(imageItems.length).toBe(2);
     });
 
     it('returns images after "scene "', () => {
@@ -224,8 +226,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    scene b');
       const pos = new Position(0, 11);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items.map(i => i.label)).toContain('bg meadow');
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      expect(items.map(i => typeof i.label === 'string' ? i.label : i.label.label)).toContain('bg meadow');
     });
   });
 
@@ -233,12 +235,11 @@ describe('RenpyCompletionProvider', () => {
     it('returns built-in and user transforms after "at "', () => {
       const idx = indexWithTransforms('my_transform');
       const provider = new RenpyCompletionProvider(() => idx);
-      // Use a non-show/scene/hide context so the image regex doesn't match first
-      const doc = mockDocument('    eileen happy at m');
+      const doc = mockDocument('    show eileen at m');
       const pos = new Position(0, 20);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       // Built-in transforms
       expect(names).toContain('center');
@@ -256,7 +257,7 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    with d');
       const pos = new Position(0, 10);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       // Should return transition items from RENPY_STATEMENTS
       expect(items.length).toBeGreaterThan(0);
       expect(items.every(i => i.kind === CompletionItemKind.Constant)).toBe(true);
@@ -270,8 +271,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('la');
       const pos = new Position(0, 2);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('label');
       expect(items.every(i => i.kind === CompletionItemKind.Keyword)).toBe(true);
@@ -283,7 +284,7 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('');
       const pos = new Position(0, 0);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       expect(items.length).toBeGreaterThan(0);
       expect(items.every(i => i.kind === CompletionItemKind.Keyword)).toBe(true);
     });
@@ -294,8 +295,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('sh');
       const pos = new Position(0, 2);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      const names = items.map(i => i.label);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
+      const names = items.map(i => typeof i.label === 'string' ? i.label : i.label.label);
 
       expect(names).toContain('show');
       expect(names).not.toContain('label');
@@ -304,15 +305,14 @@ describe('RenpyCompletionProvider', () => {
   });
 
   describe('no completions', () => {
-    it('returns empty for unrecognized context', () => {
+    it('returns empty list for unrecognized context', () => {
       const idx = emptyIndex();
       const provider = new RenpyCompletionProvider(() => idx);
-      // Text inside a string / middle of expression — no matching pattern
       const doc = mockDocument('    "Hello world"');
       const pos = new Position(0, 17);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items).toEqual([]);
+      const result = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      expect(result.items).toEqual([]);
     });
 
     it('returns no labels from empty index', () => {
@@ -321,8 +321,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    jump s');
       const pos = new Position(0, 10);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items).toEqual([]);
+      const result = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      expect(result.items).toEqual([]);
     });
 
     it('returns no characters from empty index', () => {
@@ -331,7 +331,7 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('label start:\n    e');
       const pos = new Position(1, 5);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       // Should still get statement completions, but no character completions
       const charItems = items.filter(i => i.kind === CompletionItemKind.Variable);
       expect(charItems).toEqual([]);
@@ -343,8 +343,8 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('    show screen m');
       const pos = new Position(0, 17);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
-      expect(items).toEqual([]);
+      const result = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      expect(result.items).toEqual([]);
     });
   });
 
@@ -355,9 +355,22 @@ describe('RenpyCompletionProvider', () => {
       const doc = mockDocument('        action S');
       const pos = new Position(0, 16);
 
-      const items = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      const items = getItems(provider.provideCompletionItems(doc, pos, token, defaultContext));
       expect(items.length).toBeGreaterThan(0);
       expect(items.every(i => i.kind === CompletionItemKind.Function)).toBe(true);
+    });
+  });
+
+  describe('CompletionList behavior', () => {
+    it('always returns CompletionList with isIncomplete=true', () => {
+      const idx = emptyIndex();
+      const provider = new RenpyCompletionProvider(() => idx);
+      const doc = mockDocument('    ');
+      const pos = new Position(0, 4);
+
+      const result = provider.provideCompletionItems(doc, pos, token, defaultContext);
+      expect(result).toBeInstanceOf(CompletionList);
+      expect(result.isIncomplete).toBe(true);
     });
   });
 });

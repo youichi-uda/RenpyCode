@@ -42,7 +42,18 @@ export class TestRunnerProvider {
     const projectRoot = this.runner.getProjectRoot();
 
     if (!sdkPath || !projectRoot) {
-      return { name: testName, passed: false, duration: 0, output: 'SDK or project not found.' };
+      if (!sdkPath) {
+        const openSettings = vscode.l10n.t('Open Settings');
+        vscode.window.showErrorMessage(
+          vscode.l10n.t('No Ren\'Py SDK found. Please set renpyCode.sdkPath in settings.'),
+          openSettings,
+        ).then(selection => {
+          if (selection === openSettings) {
+            vscode.commands.executeCommand('workbench.action.openSettings', 'renpyCode.sdkPath');
+          }
+        });
+      }
+      return { name: testName, passed: false, duration: 0, output: localize('SDK or project not found.', 'SDKまたはプロジェクトが見つかりません。') };
     }
 
     this._outputChannel.appendLine(`\n--- Running test: ${testName} ---`);
@@ -63,15 +74,27 @@ export class TestRunnerProvider {
         exe = path.join(sdkPath, 'renpy.sh');
       }
 
-      const args = [projectRoot, '--test', testName];
+      const args = [projectRoot, 'test', testName];
       let output = '';
       let errorOutput = '';
 
-      const proc = spawn(exe, args, {
+      const spawnOpts = {
         cwd: sdkPath,
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ['ignore', 'pipe', 'pipe'] as const,
         ...(process.platform === 'win32' ? { windowsHide: true } : {}),
-      });
+      };
+
+      let proc;
+      if (exe.endsWith('.py')) {
+        const pythonExe = path.join(sdkPath, 'lib', 'py3-windows-x86_64', 'python.exe');
+        if (fs.existsSync(pythonExe)) {
+          proc = spawn(pythonExe, [exe, ...args], spawnOpts);
+        } else {
+          proc = spawn('python', [exe, ...args], spawnOpts);
+        }
+      } else {
+        proc = spawn(exe, args, spawnOpts);
+      }
 
       proc.stdout?.on('data', (data: Buffer) => {
         const text = data.toString();
@@ -102,7 +125,7 @@ export class TestRunnerProvider {
       // Timeout after 120 seconds
       setTimeout(() => {
         proc.kill();
-        resolve({ name: testName, passed: false, duration: 120000, output: 'Test timed out.' });
+        resolve({ name: testName, passed: false, duration: 120000, output: localize('Test timed out.', 'テストがタイムアウトしました。') });
       }, 120000);
     });
   }
@@ -114,14 +137,14 @@ export class TestRunnerProvider {
     const tests = this.listTests();
 
     if (tests.length === 0) {
-      vscode.window.showWarningMessage('No testcases found in the project.');
+      vscode.window.showWarningMessage(vscode.l10n.t('No testcases found in the project.'));
       return;
     }
 
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Running Ren\'Py tests...',
+        title: vscode.l10n.t('Running Ren\'Py tests...'),
         cancellable: true,
       },
       async (progress, token) => {
@@ -145,11 +168,11 @@ export class TestRunnerProvider {
           }
         }
 
-        const msg = `Tests complete: ${passed} passed, ${failed} failed (${tests.length} total)`;
+        const resultMsg = vscode.l10n.t('Tests complete: {0} passed, {1} failed ({2} total)', passed, failed, tests.length);
         if (failed > 0) {
-          vscode.window.showWarningMessage(msg);
+          vscode.window.showWarningMessage(resultMsg);
         } else {
-          vscode.window.showInformationMessage(msg);
+          vscode.window.showInformationMessage(resultMsg);
         }
       },
     );
@@ -161,12 +184,12 @@ export class TestRunnerProvider {
   async pickAndRunTest(): Promise<void> {
     const tests = this.listTests();
     if (tests.length === 0) {
-      vscode.window.showWarningMessage('No testcases found.');
+      vscode.window.showWarningMessage(vscode.l10n.t('No testcases found.'));
       return;
     }
 
     const selected = await vscode.window.showQuickPick(tests, {
-      placeHolder: 'Select a testcase to run',
+      placeHolder: vscode.l10n.t('Select a testcase to run'),
     });
 
     if (selected) {

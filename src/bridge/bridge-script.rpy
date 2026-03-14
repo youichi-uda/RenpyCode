@@ -13,13 +13,45 @@ init -999 python:
     _mcp_lock = threading.Lock()
     _mcp_last_check = 0.0
     _mcp_heartbeat_time = 0.0
-    _mcp_tracking = False
-    _mcp_tracking_data = {"visits": {}, "transitions": [], "start_time": None}
     _mcp_last_label = None
+    _mcp_current_label = None
+    _mcp_tracking_save_time = 0.0
 
     def _mcp_ensure_dir():
         if not os.path.exists(_mcp_dir):
             os.makedirs(_mcp_dir)
+
+    # Persist tracking state to file so it survives game restarts (e.g. return to title)
+    def _mcp_load_tracking():
+        global _mcp_tracking, _mcp_tracking_data
+        tp = os.path.join(_mcp_dir, "tracking.json")
+        try:
+            if os.path.exists(tp):
+                with open(tp, "r", encoding="utf-8") as f:
+                    saved = json.load(f)
+                _mcp_tracking = saved.get("active", False)
+                _mcp_tracking_data = saved.get("data", {"visits": {}, "transitions": [], "start_time": None})
+                return
+        except Exception:
+            pass
+        _mcp_tracking = False
+        _mcp_tracking_data = {"visits": {}, "transitions": [], "start_time": None}
+
+    def _mcp_save_tracking():
+        global _mcp_tracking_save_time
+        _mcp_ensure_dir()
+        tp = os.path.join(_mcp_dir, "tracking.json")
+        tmp = tp + ".tmp"
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump({"active": _mcp_tracking, "data": _mcp_tracking_data}, f, ensure_ascii=False, default=str)
+            os.replace(tmp, tp)
+            _mcp_tracking_save_time = time.time()
+        except Exception:
+            pass
+
+    _mcp_ensure_dir()
+    _mcp_load_tracking()
 
     def _mcp_serialize_value(val, depth=0):
         if depth > 3:
@@ -75,14 +107,26 @@ init -999 python:
         return result
 
     def _mcp_get_current_label():
-        try:
-            ctx = renpy.game.context()
-            node = ctx.current
-            if hasattr(node, "name"):
-                return node.name
-            return str(node) if node else None
-        except Exception:
-            return None
+        # Returns the label tracked by label_callbacks (most reliable)
+        return _mcp_current_label
+
+    def _mcp_label_callback(label, abnormal):
+        global _mcp_current_label, _mcp_last_label, _mcp_tracking
+        prev = _mcp_current_label
+        _mcp_current_label = label
+        if _mcp_tracking and label and label != prev:
+            if label in _mcp_tracking_data["visits"]:
+                _mcp_tracking_data["visits"][label] += 1
+            else:
+                _mcp_tracking_data["visits"][label] = 1
+            if prev:
+                _mcp_tracking_data["transitions"].append({
+                    "from": prev,
+                    "to": label,
+                    "time": time.time()
+                })
+            _mcp_last_label = label
+            _mcp_save_tracking()
 
     def _mcp_write_status(data):
         _mcp_ensure_dir()
@@ -110,14 +154,11 @@ init -999 python:
             _mcp_ensure_dir()
             ss_path = os.path.join(_mcp_dir, "screenshot.png")
             try:
-                iface = renpy.game.interface
-                if getattr(iface, "surftree", None) is not None:
-                    surf = iface.save_screenshot()
-                    if surf:
-                        import pygame
-                        pygame.image.save(surf, ss_path)
-                        return {"action": "screenshot", "status": "ok", "path": ss_path}
-                return {"action": "screenshot", "status": "error", "message": "Display not ready"}
+                renpy.take_screenshot()
+                result = renpy.game.interface.save_screenshot(ss_path)
+                if result:
+                    return {"action": "screenshot", "status": "ok", "path": ss_path}
+                return {"action": "screenshot", "status": "error", "message": "save_screenshot returned False"}
             except Exception as e:
                 return {"action": "screenshot", "status": "error", "message": str(e)}
 
@@ -143,10 +184,25 @@ init -999 python:
         elif action == "jump":
             label = cmd.get("label", "")
             try:
-                renpy.warp.warp(label)
-                return {"action": "jump", "status": "ok"}
+                target_node = renpy.game.script.namemap.get(label)
+                if target_node is None:
+                    return {"action": "jump", "status": "error", "message": "Label '{}' not found".format(label)}
+                fname = target_node.filename
+                if fname.startswith("game/") or fname.startswith("game\\"):
+                    fname = fname[5:]
+                spec = "{}:{}".format(fname, target_node.linenumber)
+                renpy.session["_mcp_pending_warp_spec"] = spec
+                return {"action": "jump", "status": "ok", "message": "Warp to '{}' ({}) queued".format(label, spec)}
             except Exception as e:
                 return {"action": "jump", "status": "error", "message": str(e)}
+
+        elif action == "warp":
+            spec = cmd.get("spec", "")
+            try:
+                renpy.session["_mcp_pending_warp_spec"] = spec
+                return {"action": "warp", "status": "ok", "message": "Warp to '{}' queued".format(spec)}
+            except Exception as e:
+                return {"action": "warp", "status": "error", "message": str(e)}
 
         elif action == "set_variable":
             name = cmd.get("name", "")
@@ -171,20 +227,24 @@ init -999 python:
         elif action == "start_tracking":
             global _mcp_tracking, _mcp_tracking_data
             _mcp_tracking = True
-            _mcp_tracking_data = {"visits": {}, "transitions": [], "start_time": time.time()}
+            if not _mcp_tracking_data.get("start_time"):
+                _mcp_tracking_data["start_time"] = time.time()
+            _mcp_save_tracking()
             return {"action": "start_tracking", "status": "ok"}
 
         elif action == "stop_tracking":
             global _mcp_tracking
             _mcp_tracking = False
+            _mcp_save_tracking()
             return {"action": "stop_tracking", "status": "ok"}
 
         elif action == "get_tracking":
-            return {"action": "get_tracking", "status": "ok", "data": _mcp_tracking_data}
+            return {"action": "get_tracking", "status": "ok", "data": _mcp_tracking_data, "active": _mcp_tracking}
 
         elif action == "clear_tracking":
             global _mcp_tracking_data
             _mcp_tracking_data = {"visits": {}, "transitions": [], "start_time": None}
+            _mcp_save_tracking()
             return {"action": "clear_tracking", "status": "ok"}
 
         return {"action": action, "status": "error", "message": "Unknown action"}
@@ -199,27 +259,18 @@ init -999 python:
             return
         _mcp_last_check = now
 
-        # Track label visits
-        if _mcp_tracking:
-            current = _mcp_get_current_label()
-            if current and current != _mcp_last_label:
-                if current in _mcp_tracking_data["visits"]:
-                    _mcp_tracking_data["visits"][current] += 1
-                else:
-                    _mcp_tracking_data["visits"][current] = 1
-                if _mcp_last_label:
-                    _mcp_tracking_data["transitions"].append({
-                        "from": _mcp_last_label,
-                        "to": current,
-                        "time": now
-                    })
-                _mcp_last_label = current
-
-        # Heartbeat every 3s
-        if now - _mcp_heartbeat_time >= 3.0:
+        # Heartbeat every 2s
+        if now - _mcp_heartbeat_time >= 2.0:
             _mcp_heartbeat_time = now
             label = _mcp_get_current_label()
-            _mcp_write_status({"action": "heartbeat", "status": "ok", "label": label, "time": now})
+            # Get current scene tag for change detection
+            scene_tag = None
+            try:
+                showing = renpy.get_showing_tags()
+                scene_tag = str(sorted(showing)) if showing else None
+            except Exception:
+                pass
+            _mcp_write_status({"action": "heartbeat", "status": "ok", "label": label, "scene": scene_tag, "time": now})
 
         # Check for commands
         with _mcp_lock:
@@ -243,3 +294,14 @@ init -999 python:
                 pass
 
     config.periodic_callbacks.append(_mcp_poll_callback)
+    config.label_callbacks.append(_mcp_label_callback)
+
+    # Warp via periodic_callbacks — uses Ren'Py's built-in warp mechanism
+    def _mcp_warp_check():
+        spec = renpy.session.get("_mcp_pending_warp_spec")
+        if spec:
+            del renpy.session["_mcp_pending_warp_spec"]
+            renpy.warp.warp_spec = spec
+            raise renpy.game.FullRestartException(reason=(None, "_invoke_main_menu", "_main_menu"))
+
+    config.periodic_callbacks.append(_mcp_warp_check)

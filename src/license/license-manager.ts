@@ -18,7 +18,7 @@ export type Feature =
   | 'refactoring'
   | 'profiler';
 
-const GUMROAD_PRODUCT_ID = 'renpycode';
+const GUMROAD_PRODUCT_ID = 'uBzcDZR8buavqlk0kPmraw==';
 const GUMROAD_VERIFY_URL = 'https://api.gumroad.com/v2/licenses/verify';
 
 /** Cache key in VS Code globalState */
@@ -182,15 +182,19 @@ export class LicenseManager {
           res.on('end', () => {
             try {
               const json = JSON.parse(body);
+              if (json.success !== true) {
+                console.warn('[RenPy Code] License verification failed:', json.message || JSON.stringify(json));
+              }
               resolve(json.success === true);
-            } catch {
+            } catch (e) {
+              console.error('[RenPy Code] License verification parse error:', e, body);
               resolve(false);
             }
           });
         },
       );
 
-      req.on('error', () => resolve(false));
+      req.on('error', (err) => { console.error('[RenPy Code] License verification network error:', err.message); resolve(false); });
       req.on('timeout', () => { req.destroy(); resolve(false); });
       req.write(postData);
       req.end();
@@ -209,6 +213,35 @@ export class LicenseManager {
         valid,
         verifiedAt: Date.now(),
       } satisfies LicenseCache);
+    }
+  }
+
+  /**
+   * Called when the license key setting is changed.
+   * Re-verifies the new key against Gumroad.
+   */
+  async onLicenseKeyChanged(): Promise<void> {
+    const key = vscode.workspace.getConfiguration('renpyCode').get<string>('license.key', '');
+    if (!key) {
+      this.setValid(false);
+      if (this._context) {
+        await this._context.globalState.update(CACHE_KEY, undefined);
+      }
+      return;
+    }
+
+    const valid = await this.verifyWithGumroad(key);
+    this.setValid(valid);
+    await this.updateCache(key, valid);
+
+    if (valid) {
+      vscode.window.showInformationMessage(
+        vscode.l10n.t('RenPy Code Pro activated! All Pro features are now available.'),
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        vscode.l10n.t('Invalid license key. Please check your key and try again.'),
+      );
     }
   }
 

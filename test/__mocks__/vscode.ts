@@ -89,14 +89,23 @@ export class CompletionItem {
   documentation?: MarkdownString;
   detail?: string;
   insertText?: SnippetString | string;
+  filterText?: string;
+  sortText?: string;
   constructor(
-    public label: string,
+    public label: string | { label: string; description?: string },
     public kind: CompletionItemKind = CompletionItemKind.Text,
   ) {}
 }
 
 export class SnippetString {
   constructor(public value: string = '') {}
+}
+
+export class CompletionList {
+  constructor(
+    public items: CompletionItem[] = [],
+    public isIncomplete: boolean = false,
+  ) {}
 }
 
 export enum CodeActionKind {

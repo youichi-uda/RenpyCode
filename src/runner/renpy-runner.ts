@@ -11,6 +11,15 @@ import { localize } from '../language/i18n';
 
 export class RenpyRunner {
   private gameProcess: ChildProcess | null = null;
+  private _bridge?: import('../bridge/bridge-manager').BridgeManager;
+
+  setBridge(bridge: import('../bridge/bridge-manager').BridgeManager): void {
+    this._bridge = bridge;
+  }
+
+  isGameRunning(): boolean {
+    return this.gameProcess !== null;
+  }
 
   /**
    * Find the Ren'Py SDK path.
@@ -30,6 +39,21 @@ export class RenpyRunner {
     }
 
     return undefined;
+  }
+
+  /**
+   * Show SDK-not-found error with an "Open Settings" button.
+   */
+  private showSdkNotFoundError(): void {
+    const openSettings = vscode.l10n.t('Open Settings');
+    vscode.window.showErrorMessage(
+      vscode.l10n.t('No Ren\'Py SDK found. Please set renpyCode.sdkPath in settings.'),
+      openSettings,
+    ).then(selection => {
+      if (selection === openSettings) {
+        vscode.commands.executeCommand('workbench.action.openSettings', 'renpyCode.sdkPath');
+      }
+    });
   }
 
   /**
@@ -73,15 +97,13 @@ export class RenpyRunner {
   async launchGame(): Promise<void> {
     const sdkPath = this.getSDKPath();
     if (!sdkPath) {
-      vscode.window.showErrorMessage(
-        vscode.l10n.t('No Ren\'Py SDK found. Please set renpyCode.sdkPath in settings.'),
-      );
+      this.showSdkNotFoundError();
       return;
     }
 
     const projectRoot = this.getProjectRoot();
     if (!projectRoot) {
-      vscode.window.showErrorMessage('No Ren\'Py project found.');
+      vscode.window.showErrorMessage(vscode.l10n.t('No Ren\'Py project found.'));
       return;
     }
 
@@ -103,15 +125,13 @@ export class RenpyRunner {
   async runLint(): Promise<string> {
     const sdkPath = this.getSDKPath();
     if (!sdkPath) {
-      vscode.window.showErrorMessage(
-        vscode.l10n.t('No Ren\'Py SDK found. Please set renpyCode.sdkPath in settings.'),
-      );
+      this.showSdkNotFoundError();
       return '';
     }
 
     const projectRoot = this.getProjectRoot();
     if (!projectRoot) {
-      vscode.window.showErrorMessage('No Ren\'Py project found.');
+      vscode.window.showErrorMessage(vscode.l10n.t('No Ren\'Py project found.'));
       return '';
     }
 
@@ -143,7 +163,7 @@ export class RenpyRunner {
       // Timeout after 60 seconds
       setTimeout(() => {
         proc.kill();
-        resolve('Lint timed out after 60 seconds.');
+        resolve(localize('Lint timed out after 60 seconds.', 'Lintが60秒でタイムアウトしました。'));
       }, 60000);
     });
   }
@@ -152,11 +172,17 @@ export class RenpyRunner {
    * Warp to a specific file:line or label.
    */
   async warpTo(target: string): Promise<void> {
+    // If bridge is connected (game is running), warp via bridge
+    const bridgeConnected = this._bridge?.isConnected() ?? false;
+    if (bridgeConnected) {
+      vscode.window.showInformationMessage(vscode.l10n.t('Warping to {0}...', target));
+      await this._bridge!.sendCommand({ action: 'warp', spec: target });
+      return;
+    }
+
     const sdkPath = this.getSDKPath();
     if (!sdkPath) {
-      vscode.window.showErrorMessage(
-        vscode.l10n.t('No Ren\'Py SDK found. Please set renpyCode.sdkPath in settings.'),
-      );
+      this.showSdkNotFoundError();
       return;
     }
 
@@ -214,6 +240,57 @@ export class RenpyRunner {
     }
 
     return proc;
+  }
+
+  /**
+   * Generate translation stubs for a language via Ren'Py SDK.
+   */
+  async generateTranslations(language: string): Promise<string> {
+    const sdkPath = this.getSDKPath();
+    if (!sdkPath) {
+      this.showSdkNotFoundError();
+      return localize('Error: Ren\'Py SDK not found. Set renpyCode.sdkPath in settings.', 'エラー: Ren\'Py SDKが見つかりません。renpyCode.sdkPathを設定してください。');
+    }
+
+    const projectRoot = this.getProjectRoot();
+    if (!projectRoot) {
+      return localize('Error: No Ren\'Py project found.', 'エラー: Ren\'Pyプロジェクトが見つかりません。');
+    }
+
+    const exe = this.getRenpyExe(sdkPath);
+    const args = [projectRoot, 'translate', language];
+
+    return new Promise((resolve) => {
+      let output = '';
+      let errorOutput = '';
+
+      const proc = this.spawnRenpy(exe, args, sdkPath, true);
+
+      proc.stdout?.on('data', (data: Buffer) => {
+        output += data.toString('utf-8');
+      });
+
+      proc.stderr?.on('data', (data: Buffer) => {
+        errorOutput += data.toString('utf-8');
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          resolve(output || localize('Translation stubs generated successfully.', '翻訳スタブの生成が完了しました。'));
+        } else {
+          resolve(output || errorOutput || `Process exited with code ${code}`);
+        }
+      });
+
+      proc.on('error', (err) => {
+        resolve(`Error: ${err.message}`);
+      });
+
+      setTimeout(() => {
+        proc.kill();
+        resolve(localize('Translation generation timed out after 60 seconds.', '翻訳生成が60秒でタイムアウトしました。'));
+      }, 60000);
+    });
   }
 
   /**

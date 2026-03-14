@@ -50,6 +50,27 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
         case 'warpToLabel':
           vscode.commands.executeCommand('renpyCode.warpToLabel');
           break;
+        case 'killGame':
+          vscode.commands.executeCommand('renpyCode.killGame');
+          break;
+        case 'showPreview':
+          vscode.commands.executeCommand('renpyCode.showPreview');
+          break;
+        case 'showHeatmap':
+          vscode.commands.executeCommand('renpyCode.showHeatmap');
+          break;
+        case 'showAssets':
+          vscode.commands.executeCommand('renpyCode.showAssets');
+          break;
+        case 'showTranslation':
+          vscode.commands.executeCommand('renpyCode.showTranslation');
+          break;
+        case 'runAllTests':
+          vscode.commands.executeCommand('renpyCode.runAllTests');
+          break;
+        case 'profileProject':
+          vscode.commands.executeCommand('renpyCode.profileProject');
+          break;
       }
     });
   }
@@ -121,10 +142,21 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   <div class="section">
     <h2>${localize('Actions', 'アクション')}</h2>
     <button class="btn" onclick="send('launchGame')">▶ ${localize('Launch Game', 'ゲーム起動')}</button>
+    <button class="btn secondary" onclick="send('killGame')">⏹ ${localize('Kill Game', 'ゲーム停止')}</button>
     <button class="btn secondary" onclick="send('runLint')">🔍 ${localize('Run Lint', 'Lint実行')}</button>
     <button class="btn secondary" onclick="send('warpToLabel')">⚡ ${localize('Warp to Label', 'ラベルにワープ')}</button>
     <button class="btn secondary" onclick="send('analyzeProject')">📊 ${localize('Analyze Project', 'プロジェクト分析')}</button>
-    <button class="btn secondary" onclick="send('showFlowGraph')">🗺 ${localize('Flow Graph', 'フローグラフ')} (Pro)</button>
+  </div>
+
+  <div class="section">
+    <h2>${localize('Pro Tools', 'Proツール')}</h2>
+    <button class="btn secondary" onclick="send('showFlowGraph')">🗺 ${localize('Flow Graph', 'フローグラフ')}</button>
+    <button class="btn secondary" onclick="send('showPreview')">👁 ${localize('Live Preview', 'ライブプレビュー')}</button>
+    <button class="btn secondary" onclick="send('showHeatmap')">🔥 ${localize('Heatmap', 'ヒートマップ')}</button>
+    <button class="btn secondary" onclick="send('showAssets')">🖼 ${localize('Asset Manager', 'アセットマネージャ')}</button>
+    <button class="btn secondary" onclick="send('showTranslation')">🌐 ${localize('Translation', '翻訳')}</button>
+    <button class="btn secondary" onclick="send('runAllTests')">🧪 ${localize('Run Tests', 'テスト実行')}</button>
+    <button class="btn secondary" onclick="send('profileProject')">⚙ ${localize('Profiler', 'プロファイラ')}</button>
   </div>
 
   <div class="section">

@@ -99,7 +99,7 @@ export class RenpyDiagnosticsProvider {
 
   /** Node types where dialogue-like lines are actually properties/commands, not real dialogue. */
   private static readonly NON_DIALOGUE_CONTEXTS: ReadonlySet<NodeType> = new Set([
-    'screen', 'style_def', 'testcase', 'init_block', 'python_block', 'transform_def', 'image_def',
+    'screen', 'style_def', 'testcase', 'init_block', 'python_block', 'transform_def', 'image_def', 'translate',
   ]);
 
   /** Ren'Py special labels that should not trigger unused-label warnings. */

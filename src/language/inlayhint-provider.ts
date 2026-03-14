@@ -47,7 +47,7 @@ export class RenpyInlayHintsProvider implements vscode.InlayHintsProvider {
       if (node.type === 'dialogue') {
         const charEntry = index.characters.get(node.character);
         if (charEntry) {
-          const displayMatch = charEntry.node.value.match(/Character\s*\(\s*["']([^"']+)["']/);
+          const displayMatch = charEntry.node.value.match(/Character\s*\(\s*(?:_\s*\(\s*)?["']([^"']+)["']/);
           if (displayMatch) {
             const displayName = displayMatch[1];
             const hint = new vscode.InlayHint(

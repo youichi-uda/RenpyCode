@@ -71,6 +71,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const runner = new RenpyRunner();
   const bridge = new BridgeManager();
+  runner.setBridge(bridge);
 
   // Set up bridge with project root
   const projectRoot = runner.getProjectRoot();
@@ -225,6 +226,9 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('renpyCode.license.key')) {
+        licenseManager.onLicenseKeyChanged();
+      }
       if (e.affectsConfiguration('renpyCode')) {
         vscode.workspace.textDocuments.forEach(analyzeDocument);
       }
@@ -252,7 +256,16 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       );
     }),
-    vscode.commands.registerCommand('renpyCode.launchGame', () => runner.launchGame()),
+    vscode.commands.registerCommand('renpyCode.launchGame', () => {
+      const projectRoot = runner.getProjectRoot();
+      if (projectRoot) {
+        bridge.installBridge(context.extensionPath, projectRoot);
+        bridge.setProjectRoot(projectRoot);
+        bridge.startPolling();
+      }
+      runner.launchGame();
+    }),
+    vscode.commands.registerCommand('renpyCode.killGame', () => runner.killGame()),
     vscode.commands.registerCommand('renpyCode.lint', async () => {
       await vscode.window.withProgress(
         { location: vscode.ProgressLocation.Notification, title: 'RenPy Code: Running lint...' },
@@ -267,13 +280,14 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       );
     }),
-    vscode.commands.registerCommand('renpyCode.warpToLine', () => {
+    vscode.commands.registerCommand('renpyCode.warpToLine', async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
       const fileName = vscode.workspace.asRelativePath(editor.document.uri);
       const gamePath = fileName.replace(/^game[/\\]/, '');
       const line = editor.selection.active.line + 1;
-      runner.warpTo(`${gamePath}:${line}`);
+      await runner.warpTo(`${gamePath}:${line}`);
+      previewProvider.refreshAfterWarp();
     }),
     vscode.commands.registerCommand('renpyCode.warpToLabel', async () => {
       const idx = indexer.getIndex();
@@ -289,7 +303,8 @@ export function activate(context: vscode.ExtensionContext): void {
         const entries = idx.labels.get(selected);
         if (entries && entries.length > 0) {
           const gamePath = entries[0].file.replace(/^game[/\\]/, '');
-          runner.warpTo(`${gamePath}:${entries[0].node.line + 1}`);
+          await runner.warpTo(`${gamePath}:${entries[0].node.line + 1}`);
+          previewProvider.refreshAfterWarp();
         }
       }
     }),
@@ -320,7 +335,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const graph = flowGraphProvider.buildGraph();
       if (graph.nodes.length === 0) {
-        vscode.window.showWarningMessage('Flow Graph: No labels found.');
+        vscode.window.showWarningMessage(vscode.l10n.t('Flow Graph: No labels found.'));
         return;
       }
 
@@ -344,6 +359,12 @@ export function activate(context: vscode.ExtensionContext): void {
             });
           }
         }
+        if (msg.type === 'warp') {
+          const gamePath = msg.file.replace(/^game[/\\]/, '');
+          runner.warpTo(`${gamePath}:${msg.line + 1}`).then(() => {
+            previewProvider.refreshAfterWarp();
+          });
+        }
       });
     }),
   );
@@ -354,17 +375,43 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.debug.registerDebugConfigurationProvider('renpy', {
+      provideDebugConfigurations(): vscode.DebugConfiguration[] {
+        return [
+          {
+            type: 'renpy',
+            request: 'launch',
+            name: "Debug Ren'Py",
+            gameRoot: '${workspaceFolder}',
+          },
+        ];
+      },
       async resolveDebugConfiguration(
         _folder: vscode.WorkspaceFolder | undefined,
         config: vscode.DebugConfiguration,
         _token?: vscode.CancellationToken,
       ): Promise<vscode.DebugConfiguration | undefined> {
+        // F5 with no launch.json: config has no type set
+        if (!config.type) {
+          config.type = 'renpy';
+          config.request = 'launch';
+          config.name = "Debug Ren'Py";
+        }
         if (!licenseManager.isProLicensed) {
           await licenseManager.requirePro('debugger');
           if (!licenseManager.isProLicensed) return undefined;
         }
         if (!config.gameRoot) {
           config.gameRoot = runner.getProjectRoot() || '${workspaceFolder}';
+        }
+        if (!config.sdkPath) {
+          config.sdkPath = vscode.workspace.getConfiguration('renpyCode').get<string>('sdkPath', '');
+        }
+        // Install MCP bridge for live features during debug
+        const gameRoot = config.gameRoot as string;
+        if (gameRoot && !gameRoot.includes('${')) {
+          bridge.installBridge(context.extensionPath, gameRoot);
+          bridge.setProjectRoot(gameRoot);
+          bridge.startPolling();
         }
         return config;
       },

@@ -1,0 +1,63 @@
+RenPy Code Pro License
+
+The ultimate VS Code extension for Ren'Py visual novel development.
+
+
+WHAT YOU GET
+
+A lifetime license key that unlocks all Pro features in the RenPy Code extension.
+One key per person — use it on all your machines.
+
+
+FREE FEATURES (no license needed)
+
+ • Syntax highlighting & semantic tokens
+ • Autocompletion (labels, characters, screens, keywords, built-in classes)
+ • Hover documentation
+ • Go-to-definition & Find all references
+ • Document/workspace symbols & Call hierarchy
+ • CodeLens (reference counts) & Inlay hints (jump targets)
+ • Real-time diagnostics (undefined labels, undefined characters, invalid jumps, indentation)
+ • Code actions (quick fixes)
+ • Signature help, Document links, Bracket highlighting
+ • Color picker for Ren'Py color codes
+ • Code folding
+ • Snippets (label, menu, character, screen, image, transform)
+ • Game launch, Lint, Warp to line/label
+ • Dashboard with project stats
+ • Full Japanese localization
+
+
+PRO FEATURES (license key required)
+
+ • Debugger (DAP) — Set breakpoints, step through, inspect variables
+ • Rename refactoring — Safely rename labels, characters, and variables across all files
+ • Story flow graph — Visual graph of label connections (jump/call), click to navigate
+ • Live preview — See the current game scene in VS Code
+ • Variable tracker — Monitor game variables in real-time
+ • Heatmap — Visualize playtest visit frequency
+ • Asset manager — Browse images/audio, detect unused assets
+ • Translation dashboard — Track translation progress, find untranslated strings
+ • Test runner — Run Ren'Py testcases from VS Code
+ • Route extraction — Extract dialogue into new labels
+ • Performance profiler — Analyze project complexity and resource usage
+
+
+HOW TO ACTIVATE
+
+1. Install "RenPy Code" from the VS Code Marketplace
+2. Open Command Palette > "RenPy Code: Activate Pro License"
+3. Enter your license key
+4. Done! All Pro features are now unlocked.
+
+
+REQUIREMENTS
+
+ • VS Code 1.85+
+ • Ren'Py SDK 7.x or 8.x (for game launch/lint/debug features)
+
+
+SUPPORT
+
+ • GitHub Issues: https://github.com/youichi-uda/renpy-code/issues
+ • Website: https://abyo.net

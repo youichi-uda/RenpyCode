@@ -38,5 +38,6 @@
   "command.insertDialogue": "RenPy Code: ダイアログを挿入",
   "command.renameSymbol": "RenPy Code: シンボルをリネーム",
   "command.refreshVariables": "RenPy Code: 変数を更新",
-  "command.profileProject": "RenPy Code: プロジェクトパフォーマンスプロファイル"
+  "command.profileProject": "RenPy Code: プロジェクトパフォーマンスプロファイル",
+  "command.killGame": "RenPy Code: ゲームを停止"
 }

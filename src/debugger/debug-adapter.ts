@@ -44,6 +44,7 @@ interface DebugStatus {
 
 interface LaunchRequestArgs extends DebugProtocol.LaunchRequestArguments {
   gameRoot: string;
+  sdkPath?: string;
 }
 
 const THREAD_ID = 1;
@@ -129,8 +130,8 @@ export class RenpyDebugSession extends DebugSession {
     // Write initial breakpoints
     this.syncBreakpoints();
 
-    // Find SDK
-    this._sdkPath = this.findSDK();
+    // Find SDK (prefer launch arg, then env, then common paths)
+    this._sdkPath = args.sdkPath || this.findSDK();
     if (!this._sdkPath) {
       this.sendEvent(new OutputEvent('Error: Ren\'Py SDK not found. Set renpyCode.sdkPath.\n', 'stderr'));
       this.sendEvent(new TerminatedEvent());
@@ -353,6 +354,8 @@ init -998 python:
     import os, json, time, threading
 
     _debug_dir = os.path.join(config.gamedir, "_debug")
+    if not os.path.exists(_debug_dir):
+        os.makedirs(_debug_dir)
     _debug_lock = threading.Lock()
     _debug_paused = False
     _debug_step_mode = None  # None, 'over', 'in', 'out'
@@ -433,20 +436,26 @@ init -998 python:
                 except Exception:
                     pass
 
-    def _debug_statement_callback(node):
+    def _debug_statement_callback(_stmt_name):
         global _debug_paused, _debug_step_mode
 
-        # Get current location
+        # Get current file and line via Ren'Py API
         try:
-            fn = node.filename
-            ln = node.linenumber
+            fn, ln = renpy.get_filename_line()
         except Exception:
             return
+        if fn == "unknown":
+            return
 
-        # Check breakpoint
-        rel_file = fn
-        if config.gamedir and fn.startswith(config.gamedir):
-            rel_file = fn[len(config.gamedir):].lstrip("/\\\\")
+        # Make path relative to game dir
+        rel_file = fn.replace("\\\\", "/")
+        if config.gamedir:
+            gd = config.gamedir.replace("\\\\", "/").rstrip("/") + "/"
+            if rel_file.startswith(gd):
+                rel_file = rel_file[len(gd):]
+        # Also strip leading "game/" if present
+        if rel_file.startswith("game/"):
+            rel_file = rel_file[5:]
 
         hit_bp = _debug_check_breakpoint(rel_file, ln)
 
@@ -454,32 +463,50 @@ init -998 python:
             _debug_paused = True
             _debug_step_mode = None
 
-            # Get variables
-            skip = {"say", "menu", "renpy", "store", "config", "style", "persistent", "gui", "build"}
-            import types
+            # Get variables — only show simple user-defined values
+            # Ren'Py system variables to exclude
+            skip = {
+                "say", "menu", "renpy", "store", "config", "style", "persistent",
+                "gui", "build", "director", "iap", "achievement", "updater", "layeredimage",
+                "define", "default", "preferences", "layout", "theme", "bubble",
+                "PY2", "basestring", "default_transition", "ext", "main_menu",
+                "mouse_visible", "nvl_list", "nvl_variant", "quick_menu",
+                "save_name", "suppress_overlay", "narrator", "name_only",
+                "centered", "vcentered", "adv", "nvl", "nvl_narrator",
+                "nvl_menu", "nvl_erase", "predict_menu",
+            }
+            _simple_types = (bool, int, float, str, type(None), list, dict, tuple)
             variables = {}
-            for name in dir(store):
-                if name.startswith("_") or name in skip:
+            for vname in dir(store):
+                if vname.startswith("_") or vname in skip:
                     continue
                 try:
-                    val = getattr(store, name)
-                    if isinstance(val, (types.ModuleType, types.FunctionType, type)):
+                    val = getattr(store, vname)
+                    if callable(val):
                         continue
-                    variables[name] = str(val)
+                    if isinstance(val, _simple_types):
+                        variables[vname] = repr(val)
                 except Exception:
                     pass
 
             # Get call stack
-            stack = []
+            stack = [{"file": rel_file, "line": ln, "name": _stmt_name}]
             try:
                 for ctx in renpy.game.contexts:
                     if hasattr(ctx, "current") and ctx.current:
-                        n = ctx.current
-                        if hasattr(n, "filename") and hasattr(n, "linenumber"):
-                            f = n.filename
-                            if config.gamedir and f.startswith(config.gamedir):
-                                f = f[len(config.gamedir):].lstrip("/\\\\")
-                            stack.append({"file": f, "line": n.linenumber, "name": getattr(n, "name", str(n))})
+                        try:
+                            n = renpy.game.script.namemap.get(ctx.current)
+                            if n:
+                                f = n.filename.replace("\\\\", "/")
+                                if config.gamedir:
+                                    gd2 = config.gamedir.replace("\\\\", "/").rstrip("/") + "/"
+                                    if f.startswith(gd2):
+                                        f = f[len(gd2):]
+                                if f.startswith("game/"):
+                                    f = f[5:]
+                                stack.append({"file": f, "line": n.linenumber, "name": str(ctx.current)})
+                        except Exception:
+                            pass
             except Exception:
                 pass
 
@@ -488,7 +515,6 @@ init -998 python:
                 "status": "ok",
                 "file": rel_file,
                 "line": ln,
-                "label": _mcp_get_current_label() if "_mcp_get_current_label" in dir() else None,
                 "variables": variables,
                 "stack": stack,
                 "reason": "breakpoint" if hit_bp else "step",
@@ -516,10 +542,13 @@ init -998 python:
 
     for (const [filePath, bps] of this._breakpoints) {
       // Convert absolute path to game-relative
-      let relPath = filePath;
-      const gameDir = path.join(this._gameRoot, 'game');
-      if (filePath.startsWith(gameDir)) {
-        relPath = filePath.substring(gameDir.length + 1).replace(/\\/g, '/');
+      const normalized = filePath.replace(/\\/g, '/');
+      const gameDir = path.join(this._gameRoot, 'game').replace(/\\/g, '/');
+      let relPath: string;
+      if (normalized.toLowerCase().startsWith(gameDir.toLowerCase() + '/')) {
+        relPath = normalized.substring(gameDir.length + 1);
+      } else {
+        relPath = normalized;
       }
 
       bpData[relPath] = bps.map(bp => bp.line);
@@ -533,18 +562,25 @@ init -998 python:
 
   private launchGame(): void {
     const exe = this.getRenpyExe();
-    if (!exe) return;
+    if (!exe) {
+      this.sendEvent(new OutputEvent(`Error: Ren'Py executable not found at ${this._sdkPath}\n`, 'stderr'));
+      this.sendEvent(new TerminatedEvent());
+      return;
+    }
 
+    if (!this._gameRoot || !fs.existsSync(path.join(this._gameRoot, 'game'))) {
+      this.sendEvent(new OutputEvent(`Error: No Ren'Py project found at "${this._gameRoot}". Ensure gameRoot points to a directory containing a game/ folder.\n`, 'stderr'));
+      this.sendEvent(new TerminatedEvent());
+      return;
+    }
+
+    this.sendEvent(new OutputEvent(`Launching: ${exe} ${this._gameRoot}\n`, 'console'));
     const args = [this._gameRoot];
 
     const options: Parameters<typeof spawn>[2] = {
       cwd: this._sdkPath,
       stdio: ['ignore', 'pipe', 'pipe'],
     };
-
-    if (process.platform === 'win32') {
-      (options as any).windowsHide = true;
-    }
 
     this._gameProcess = spawn(exe, args, options);
 

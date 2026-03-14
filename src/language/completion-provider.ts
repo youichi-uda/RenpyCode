@@ -16,53 +16,69 @@ export class RenpyCompletionProvider implements vscode.CompletionItemProvider {
     position: vscode.Position,
     _token: vscode.CancellationToken,
     context: vscode.CompletionContext,
-  ): vscode.CompletionItem[] {
+  ): vscode.CompletionList {
     const lineText = document.lineAt(position.line).text;
     const textBefore = lineText.substring(0, position.character);
     const trimmed = textBefore.trimStart();
+    const isIndented = /^\s+/.test(textBefore);
 
     // ── Label completion after jump/call ──
     if (/^(jump|call)\s+\w*$/.test(trimmed)) {
-      return this.labelCompletions();
-    }
-
-    // ── Character completion for dialogue ──
-    // At the start of an indented line with just a word typed
-    if (/^\s+\w+$/.test(textBefore) && !trimmed.startsWith('$')) {
-      return [...this.characterCompletions(), ...this.statementCompletions(trimmed)];
+      return this.makeList(this.labelCompletions());
     }
 
     // ── Screen name completion after "show screen" / "call screen" / "use" ──
-    if (/^(?:show|call)\s+screen\s+\w*$/.test(trimmed) || /^use\s+\w*$/.test(trimmed)) {
-      return this.screenCompletions();
+    if (/^(?:show|call)\s+screen(\s+\w*)?$/.test(trimmed) || /^use\s+\w*$/.test(trimmed)) {
+      return this.makeList(this.screenCompletions());
     }
 
-    // ── Image completion after scene/show/hide ──
-    if (/^(scene|show|hide)\s+[\w\s]*$/.test(trimmed)) {
-      return this.imageCompletions();
-    }
-
-    // ── Transform completion after "at" ──
+    // ── Transform completion after "at" (must be before image check) ──
     if (/\bat\s+\w*$/.test(trimmed)) {
-      return this.transformCompletions();
+      return this.makeList(this.transformCompletions());
     }
 
     // ── Transition completion after "with" ──
     if (/^with\s+\w*$/.test(trimmed)) {
-      return this.transitionCompletions();
+      return this.makeList(this.transitionCompletions());
+    }
+
+    // ── Image completion after scene/show/hide ──
+    if (/^(scene|show|hide)\s+[\w\s]*$/.test(trimmed)) {
+      const items = this.imageCompletions();
+      // Add "screen" keyword after "show"/"call" for "show screen <name>" syntax
+      if (/^(show|call)\s/.test(trimmed)) {
+        const screenKw = new vscode.CompletionItem('screen', vscode.CompletionItemKind.Keyword);
+        screenKw.detail = localize('Show a named screen', '名前付きスクリーンを表示');
+        items.push(screenKw);
+      }
+      return this.makeList(items);
     }
 
     // ── Action completion (in screen context) ──
     if (/action\s+\w*$/.test(trimmed)) {
-      return this.actionCompletions();
+      return this.makeList(this.actionCompletions());
     }
 
-    // ── Statement completion at line start ──
+    // ── Class/constructor completion after "=" or "(" ──
+    if (/[=(]\s*\w*$/.test(trimmed)) {
+      return this.makeList(this.classCompletions());
+    }
+
+    // ── Statement + character + ATL completion at line start ──
     if (/^\s*\w*$/.test(textBefore)) {
-      return this.statementCompletions(trimmed);
+      const items = this.statementCompletions(trimmed);
+      if (isIndented) {
+        items.push(...this.characterCompletions());
+        items.push(...this.atlCompletions());
+      }
+      return this.makeList(items);
     }
 
-    return [];
+    return this.makeList([]);
+  }
+
+  private makeList(items: vscode.CompletionItem[]): vscode.CompletionList {
+    return new vscode.CompletionList(items, /* isIncomplete */ true);
   }
 
   private labelCompletions(): vscode.CompletionItem[] {
@@ -84,12 +100,13 @@ export class RenpyCompletionProvider implements vscode.CompletionItemProvider {
     const items: vscode.CompletionItem[] = [];
 
     for (const [name, entry] of index.characters) {
-      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Variable);
-      // Extract display name from Character("DisplayName", ...)
-      const displayMatch = entry.node.value.match(/Character\s*\(\s*["']([^"']+)["']/);
+      // Extract display name from Character("Name", ...) or Character(_("Name"), ...)
+      const displayMatch = entry.node.value.match(/Character\s*\(\s*(?:_\s*\(\s*)?["']([^"']+)["']/);
       const displayName = displayMatch ? displayMatch[1] : name;
+      const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Variable);
       item.detail = `${localize('character', 'キャラクター')}: ${displayName}`;
-      item.insertText = new vscode.SnippetString(`${name} "\${1}"`)
+      item.sortText = `!${name}`;
+      item.insertText = new vscode.SnippetString(`${name} "\${1}"`);
       items.push(item);
     }
 
@@ -163,6 +180,42 @@ export class RenpyCompletionProvider implements vscode.CompletionItemProvider {
       const item = new vscode.CompletionItem(stmt.name, vscode.CompletionItemKind.Function);
       item.detail = getStatementDescription(stmt);
       item.documentation = new vscode.MarkdownString(`\`${stmt.syntax}\``);
+      items.push(item);
+    }
+
+    return items;
+  }
+
+  private classCompletions(): vscode.CompletionItem[] {
+    const items: vscode.CompletionItem[] = [];
+
+    const snippets: Record<string, string> = {
+      'Character': 'Character(_("${1:Name}")${2:, color="${3:#c8c8c8}"})',
+      'DynamicCharacter': 'DynamicCharacter(${1:name_expr})',
+      'ADVCharacter': 'ADVCharacter(_("${1:Name}")${2:, color="${3:#c8c8c8}"})',
+      'NVLCharacter': 'NVLCharacter(_("${1:Name}")${2:, color="${3:#c8c8c8}"})',
+    };
+
+    for (const stmt of RENPY_STATEMENTS.filter(s => s.kind === 'class')) {
+      const item = new vscode.CompletionItem(stmt.name, vscode.CompletionItemKind.Class);
+      item.detail = getStatementDescription(stmt);
+      item.documentation = new vscode.MarkdownString(`\`${stmt.syntax}\`\n\n${getStatementDescription(stmt)}`);
+      if (snippets[stmt.name]) {
+        item.insertText = new vscode.SnippetString(snippets[stmt.name]);
+      }
+      items.push(item);
+    }
+
+    return items;
+  }
+
+  private atlCompletions(): vscode.CompletionItem[] {
+    const items: vscode.CompletionItem[] = [];
+
+    for (const stmt of RENPY_STATEMENTS.filter(s => s.kind === 'atl')) {
+      const item = new vscode.CompletionItem(stmt.name, vscode.CompletionItemKind.Event);
+      item.detail = getStatementDescription(stmt);
+      item.documentation = new vscode.MarkdownString(`\`${stmt.syntax}\`\n\n${getStatementDescription(stmt)}`);
       items.push(item);
     }
 
