@@ -2,6 +2,8 @@
 
 Complete Ren'Py development suite for Visual Studio Code — syntax highlighting, code completion, diagnostics, debugger, flow graph, live preview, and more.
 
+English | **[日本語](README.ja.md)**
+
 ## Features
 
 ### Free
