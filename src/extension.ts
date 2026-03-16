@@ -407,10 +407,13 @@ export function activate(context: vscode.ExtensionContext): void {
           config.sdkPath = vscode.workspace.getConfiguration('renpyCode').get<string>('sdkPath', '');
         }
         // Install MCP bridge for live features during debug
-        const gameRoot = config.gameRoot as string;
-        if (gameRoot && !gameRoot.includes('${')) {
-          bridge.installBridge(context.extensionPath, gameRoot);
-          bridge.setProjectRoot(gameRoot);
+        // config.gameRoot may contain unresolved ${workspaceFolder} — fall back to runner
+        const resolvedGameRoot = (config.gameRoot && !String(config.gameRoot).includes('${'))
+          ? String(config.gameRoot)
+          : runner.getProjectRoot();
+        if (resolvedGameRoot) {
+          bridge.installBridge(context.extensionPath, resolvedGameRoot);
+          bridge.setProjectRoot(resolvedGameRoot);
           bridge.startPolling();
         }
         return config;
