@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import { cpSync, mkdirSync } from 'fs';
 
 const production = process.argv.includes('--production');
 
@@ -13,3 +14,7 @@ await esbuild.build({
   sourcemap: !production,
   minify: production,
 });
+
+// Copy bridge script to package-accessible location (src/ is excluded by .vscodeignore)
+mkdirSync('bridge', { recursive: true });
+cpSync('src/bridge/bridge-script.rpy', 'bridge/bridge-script.rpy');
