@@ -90,7 +90,7 @@
       "English and Japanese localization"
     ],
     "screenshot": "https://renpy-code.abyo.net/img/og-image.png",
-    "softwareVersion": "0.1.0",
+    "softwareVersion": "1.0.0",
     "programmingLanguage": "TypeScript",
     "inLanguage": ["en", "ja"]
   }
@@ -157,6 +157,55 @@
           "@type": "Answer",
           "text": "Yes. RenPy Code has full English and Japanese localization. All commands, diagnostics messages, hover documentation, and UI elements are displayed in your VS Code language setting. The translation dashboard also helps manage multi-language visual novel projects."
         }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Structured Data: VideoObject -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": "RenPy Code Demo — Debugger, Flow Graph, Live Preview for Ren'Py in VS Code",
+    "description": "Demo of RenPy Code v1.0.0: a VS Code extension for Ren'Py visual novel development. Shows the story flow graph, live preview, DAP debugger with breakpoints, warp to label, and runtime variable editing.",
+    "thumbnailUrl": "https://img.youtube.com/vi/D7UEZt3k1hQ/maxresdefault.jpg",
+    "uploadDate": "2026-03-15",
+    "contentUrl": "https://youtu.be/D7UEZt3k1hQ",
+    "embedUrl": "https://www.youtube-nocookie.com/embed/D7UEZt3k1hQ",
+    "publisher": {
+      "@type": "Organization",
+      "name": "abyo-software",
+      "url": "https://abyo.net"
+    }
+  }
+  </script>
+
+  <!-- Structured Data: HowTo (for AIO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to set up RenPy Code for VS Code",
+    "description": "Install and configure the RenPy Code VS Code extension for Ren'Py visual novel development in under 60 seconds.",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Install the extension",
+        "text": "Search 'RenPy Code' in the VS Code Extensions panel or run: code --install-extension abyo-software.renpy-code"
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Set the SDK path",
+        "text": "Open VS Code Settings and set renpyCode.sdkPath to your Ren'Py SDK directory (e.g., C:/renpy-8.5.2-sdk)."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Open a .rpy file",
+        "text": "Open any Ren'Py project folder containing a game/ directory and start editing .rpy files. All free features activate automatically."
       }
     ]
   }
@@ -865,6 +914,13 @@
           </a>
         </div>
 
+        <!-- Demo Video -->
+        <div class="video-wrap" style="margin-top:48px;">
+          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:var(--radius);border:1px solid var(--border);">
+            <iframe src="https://www.youtube-nocookie.com/embed/D7UEZt3k1hQ" title="RenPy Code Demo — Debugger, Flow Graph, Live Preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;"></iframe>
+          </div>
+        </div>
+
         <!-- Stats -->
         <div class="stats-bar" role="list" aria-label="Extension statistics">
           <div class="stat-item" role="listitem">
@@ -1382,7 +1438,7 @@
           <a href="https://github.com/youichi-uda/renpy-code" target="_blank" rel="noopener">GitHub</a>
           <a href="https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code" target="_blank" rel="noopener">VS Code Marketplace</a>
           <a href="https://y1uda.gumroad.com/l/renpycode" target="_blank" rel="noopener">Gumroad</a>
-          <a href="https://discord.gg/6FVA25mW" target="_blank" rel="noopener">Discord</a>
+          <a href="https://discord.gg/QawHGkajRQ" target="_blank" rel="noopener">Discord</a>
         </div>
       </div>
     </div>
