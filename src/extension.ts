@@ -38,6 +38,10 @@ import { RenpySignatureProvider } from './language/signature-provider';
 import { RenpyBracketHighlightProvider } from './language/bracket-provider';
 import { RenpyRenameProvider } from './language/rename-provider';
 import { registerVariableTracker } from './language/variable-tracker';
+import { registerScreenTree } from './language/screen-tree-provider';
+import { RenpyFormattingProvider } from './language/formatting-provider';
+import { ATLPreviewProvider } from './language/atl-preview-provider';
+import { SaveInspector } from './language/save-inspector';
 import { PreviewProvider } from './language/preview-provider';
 import { ProjectIndexer } from './analyzer/project-indexer';
 import { LicenseManager } from './license/license-manager';
@@ -129,6 +133,10 @@ export function activate(context: vscode.ExtensionContext): void {
       { language: LANGUAGE_ID },
       new RenpyHoverProvider(getIndex),
     ),
+    vscode.languages.registerDocumentFormattingEditProvider(
+      { language: LANGUAGE_ID },
+      new RenpyFormattingProvider(),
+    ),
     vscode.languages.registerDefinitionProvider(
       { language: LANGUAGE_ID },
       new RenpyDefinitionProvider(getIndex),
@@ -202,6 +210,9 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
+  // Screen structure tree view
+  const screenTree = registerScreenTree(context, getIndex);
+
   // Variable tracker tree view
   const variableTracker = registerVariableTracker(context, getIndex, bridge);
 
@@ -213,6 +224,7 @@ export function activate(context: vscode.ExtensionContext): void {
     indexer.indexDocument(document);
     diagnostics.analyzeDocument(document);
     codeLensProvider.refresh();
+    screenTree.refresh();
     updateDashboardStats();
   };
 
@@ -436,6 +448,32 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('renpyCode.showPreview', async () => {
       if (!(await licenseManager.requirePro('live-preview'))) return;
       await previewProvider.showPreview();
+    }),
+  );
+
+  // ══════════════════════════════════════════════════════════
+  //  PRO: ATL Preview
+  // ══════════════════════════════════════════════════════════
+
+  const atlPreview = new ATLPreviewProvider(getIndex);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('renpyCode.showATLPreview', async () => {
+      if (!(await licenseManager.requirePro('atl-preview'))) return;
+      await atlPreview.showPreview();
+    }),
+  );
+
+  // ══════════════════════════════════════════════════════════
+  //  PRO: Save Inspector
+  // ══════════════════════════════════════════════════════════
+
+  const saveInspector = new SaveInspector(context.extensionUri);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('renpyCode.showSaveInspector', async () => {
+      if (!(await licenseManager.requirePro('save-inspector'))) return;
+      await saveInspector.showInspector();
     }),
   );
 

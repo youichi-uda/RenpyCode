@@ -15,6 +15,8 @@ export type Feature =
   | 'flow-graph'
   | 'auto-test'
   | 'live-preview'
+  | 'atl-preview'
+  | 'save-inspector'
   | 'refactoring'
   | 'profiler';
 
@@ -131,6 +133,8 @@ export class LicenseManager {
       'flow-graph': vscode.l10n.t('Story Flow Graph'),
       'auto-test': vscode.l10n.t('Auto-Test'),
       'live-preview': vscode.l10n.t('Live Preview'),
+      'atl-preview': vscode.l10n.t('ATL Animation Preview'),
+      'save-inspector': vscode.l10n.t('Save Inspector'),
       'refactoring': vscode.l10n.t('Refactoring Tools'),
       'profiler': vscode.l10n.t('Performance Profiler'),
     };

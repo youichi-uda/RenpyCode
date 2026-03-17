@@ -15,6 +15,7 @@ await esbuild.build({
   minify: production,
 });
 
-// Copy bridge script to package-accessible location (src/ is excluded by .vscodeignore)
+// Copy bridge files to package-accessible location (src/ is excluded by .vscodeignore)
 mkdirSync('bridge', { recursive: true });
 cpSync('src/bridge/bridge-script.rpy', 'bridge/bridge-script.rpy');
+cpSync('src/bridge/save-reader.py', 'bridge/save-reader.py');

@@ -26,8 +26,14 @@ export class Uri {
 
 export class MarkdownString {
   value = '';
+  supportHtml = false;
+  isTrusted = false;
   appendCodeblock(code: string, lang?: string) { this.value += `\`\`\`${lang || ''}\n${code}\n\`\`\`\n`; }
   appendMarkdown(md: string) { this.value += md; }
+}
+
+export class Hover {
+  constructor(public contents: MarkdownString | string, public range?: Range) {}
 }
 
 export enum DiagnosticSeverity {
@@ -276,6 +282,30 @@ export class ColorPresentation {
 export class TextEdit {
   constructor(public range: Range, public newText: string) {}
   static replace(range: Range, newText: string) { return new TextEdit(range, newText); }
+  static delete(range: Range) { return new TextEdit(range, ''); }
+}
+
+export enum TreeItemCollapsibleState {
+  None = 0,
+  Collapsed = 1,
+  Expanded = 2,
+}
+
+export class TreeItem {
+  iconPath?: ThemeIcon;
+  description?: string;
+  tooltip?: string;
+  command?: any;
+  collapsibleState: TreeItemCollapsibleState;
+  constructor(label: string, collapsibleState: TreeItemCollapsibleState = TreeItemCollapsibleState.None) {
+    this.label = label;
+    this.collapsibleState = collapsibleState;
+  }
+  label: string;
+}
+
+export class ThemeIcon {
+  constructor(public id: string) {}
 }
 
 export class SignatureHelp {

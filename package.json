@@ -8,6 +8,9 @@
     "type": "git",
     "url": "https://github.com/youichi-uda/RenpyCode.git"
   },
+  "bugs": {
+    "url": "https://discord.gg/QawHGkajRQ"
+  },
   "icon": "images/icon.png",
   "license": "SEE LICENSE IN LICENSE.md",
   "l10n": "./l10n",
@@ -169,6 +172,14 @@
         "title": "%command.showPreview%"
       },
       {
+        "command": "renpyCode.showATLPreview",
+        "title": "%command.showATLPreview%"
+      },
+      {
+        "command": "renpyCode.showSaveInspector",
+        "title": "%command.showSaveInspector%"
+      },
+      {
         "command": "renpyCode.showHeatmap",
         "title": "%command.showHeatmap%"
       },
@@ -305,6 +316,11 @@
           "type": "webview",
           "id": "renpyCode.dashboard",
           "name": "%view.dashboard%",
+          "when": "renpyCode.projectDetected"
+        },
+        {
+          "id": "renpyCode.screensView",
+          "name": "%view.screens%",
           "when": "renpyCode.projectDetected"
         },
         {
