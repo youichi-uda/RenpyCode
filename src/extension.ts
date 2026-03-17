@@ -48,6 +48,7 @@ import { LicenseManager } from './license/license-manager';
 import { RenpyRunner } from './runner/renpy-runner';
 import { BridgeManager } from './bridge/bridge-manager';
 import { FlowGraphProvider } from './flow-graph/flow-graph-provider';
+import { NodeEditorProvider } from './node-editor/node-editor-provider';
 import { DashboardProvider } from './dashboard/dashboard-provider';
 import { HeatmapProvider } from './heatmap/heatmap-provider';
 import { AssetProvider } from './assets/asset-provider';
@@ -219,6 +220,8 @@ export function activate(context: vscode.ExtensionContext): void {
   // ── Diagnostics lifecycle ──
   context.subscriptions.push(diagnostics.collection);
 
+  let nodeEditorRef: NodeEditorProvider | undefined;
+
   const analyzeDocument = (document: vscode.TextDocument) => {
     if (document.languageId !== LANGUAGE_ID) return;
     indexer.indexDocument(document);
@@ -226,6 +229,8 @@ export function activate(context: vscode.ExtensionContext): void {
     codeLensProvider.refresh();
     screenTree.refresh();
     updateDashboardStats();
+    // nodeEditor is defined later — use optional chaining via closure
+    nodeEditorRef?.onIndexUpdated();
   };
 
   vscode.workspace.textDocuments.forEach(analyzeDocument);
@@ -336,6 +341,8 @@ export function activate(context: vscode.ExtensionContext): void {
   // ══════════════════════════════════════════════════════════
 
   const flowGraphProvider = new FlowGraphProvider(getIndex, context.extensionUri);
+  const nodeEditor = new NodeEditorProvider(getIndex, context.extensionUri);
+  nodeEditorRef = nodeEditor;
 
   context.subscriptions.push(
     vscode.commands.registerCommand('renpyCode.showFlowGraph', async () => {
@@ -345,39 +352,7 @@ export function activate(context: vscode.ExtensionContext): void {
         await indexer.indexWorkspace();
       }
 
-      const graph = flowGraphProvider.buildGraph();
-      if (graph.nodes.length === 0) {
-        vscode.window.showWarningMessage(vscode.l10n.t('Flow Graph: No labels found.'));
-        return;
-      }
-
-      const panel = vscode.window.createWebviewPanel(
-        'renpyCode.flowGraph',
-        localize('RenPy Code: Story Flow Graph', 'RenPy Code: ストーリーフローグラフ'),
-        vscode.ViewColumn.Beside,
-        { enableScripts: true },
-      );
-
-      panel.webview.html = flowGraphProvider.renderHtml(graph, panel.webview);
-
-      panel.webview.onDidReceiveMessage(msg => {
-        if (msg.type === 'navigate') {
-          const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-          if (workspaceFolder) {
-            const uri = vscode.Uri.joinPath(workspaceFolder.uri, msg.file);
-            vscode.window.showTextDocument(uri, {
-              selection: new vscode.Range(msg.line, 0, msg.line, 0),
-              viewColumn: vscode.ViewColumn.One,
-            });
-          }
-        }
-        if (msg.type === 'warp') {
-          const gamePath = msg.file.replace(/^game[/\\]/, '');
-          runner.warpTo(`${gamePath}:${msg.line + 1}`).then(() => {
-            previewProvider.refreshAfterWarp();
-          });
-        }
-      });
+      await nodeEditor.show();
     }),
   );
 
