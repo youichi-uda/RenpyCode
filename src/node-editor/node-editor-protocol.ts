@@ -18,7 +18,7 @@ export interface EditorNode {
   hasReturn: boolean;
   dialogueCount: number;
   dialoguePreview: string[];
-  choices: string[];
+  choices: { text: string; line: number }[];
   collapsed: boolean;
 }
 

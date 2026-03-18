@@ -91,7 +91,7 @@ export class NodeEditorProvider {
       let hasReturn = false;
       let dialogueCount = 0;
       const dialoguePreview: string[] = [];
-      const choices: string[] = [];
+      const choices: { text: string; line: number }[] = [];
 
       this.walkNodes(labelNode.children, name, edges, edgeSet, choices, (node) => {
         if (node.type === 'menu') hasMenu = true;
@@ -174,35 +174,39 @@ export class NodeEditorProvider {
     currentLabel: string,
     edges: EditorEdge[],
     edgeSet: Set<string>,
-    choices: string[],
+    choices: { text: string; line: number }[],
     visitor: (node: RenpyNode) => void,
+    currentChoiceIndex?: number,
   ): void {
     for (const node of nodes) {
       visitor(node);
 
       if (node.type === 'command' && LABEL_REF_COMMANDS.has(node.command) && node.target) {
         const type = node.command === 'call' ? 'call' as const : 'jump' as const;
-        const key = `${currentLabel}->${node.target}:${type}`;
+        const portSuffix = currentChoiceIndex !== undefined ? `:choice${currentChoiceIndex}` : '';
+        const key = `${currentLabel}->${node.target}:${type}${portSuffix}`;
         if (!edgeSet.has(key)) {
           edgeSet.add(key);
           edges.push({
             id: key,
             from: currentLabel,
             to: node.target,
-            fromPort: 'bottom',
+            fromPort: currentChoiceIndex !== undefined ? `choice:${currentChoiceIndex}` : 'bottom',
             toPort: 'top',
-            type,
+            type: currentChoiceIndex !== undefined ? 'choice' : type,
+            choiceText: currentChoiceIndex !== undefined ? choices[currentChoiceIndex]?.text : undefined,
           });
         }
       }
 
       if (node.type === 'menu_choice') {
-        choices.push(node.text);
-        this.walkNodes(node.children, currentLabel, edges, edgeSet, choices, visitor);
+        const choiceIdx = choices.length;
+        choices.push({ text: node.text, line: node.line });
+        this.walkNodes(node.children, currentLabel, edges, edgeSet, choices, visitor, choiceIdx);
       }
 
       if (node.children.length > 0 && node.type !== 'menu_choice') {
-        this.walkNodes(node.children, currentLabel, edges, edgeSet, choices, visitor);
+        this.walkNodes(node.children, currentLabel, edges, edgeSet, choices, visitor, currentChoiceIndex);
       }
     }
   }

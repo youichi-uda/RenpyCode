@@ -151,6 +151,22 @@ export function autoLayout(
     }
   }
 
+  // Normalize: shift all positions so that minimum x,y is at a safe margin
+  if (results.length > 0) {
+    let minX = Infinity, minY = Infinity;
+    for (const r of results) {
+      minX = Math.min(minX, r.x - NODE_WIDTH / 2);
+      minY = Math.min(minY, r.y);
+    }
+    const margin = 60;
+    const offsetX = -minX + margin;
+    const offsetY = -minY + margin;
+    for (const r of results) {
+      r.x += offsetX;
+      r.y += offsetY;
+    }
+  }
+
   return results;
 }
 

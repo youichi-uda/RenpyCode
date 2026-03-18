@@ -30,7 +30,7 @@ body {
 #canvas {
   position: absolute; top: 0; left: 0;
   transform-origin: 0 0;
-  width: 10000px; height: 10000px;
+  overflow: visible;
 }
 
 /* ── Nodes ── */
@@ -348,6 +348,9 @@ function renderNode(n) {
     const spacing = NODE_W / (n.choices.length + 1);
     n.choices.forEach((choice, i) => {
       const cx = spacing * (i + 1);
+      const choiceText = typeof choice === 'object' ? choice.text : choice;
+      const choiceLine = typeof choice === 'object' ? choice.line : -1;
+
       const cp = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       cp.classList.add('port');
       cp.setAttribute('cx', cx);
@@ -355,6 +358,7 @@ function renderNode(n) {
       cp.dataset.portType = 'choice';
       cp.dataset.nodeId = n.id;
       cp.dataset.choiceIndex = i;
+      cp.dataset.choiceLine = choiceLine;
       g.appendChild(cp);
 
       const cl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -362,7 +366,7 @@ function renderNode(n) {
       cl.setAttribute('x', cx);
       cl.setAttribute('y', NODE_H + 16);
       cl.setAttribute('text-anchor', 'middle');
-      cl.textContent = choice.length > 15 ? choice.substring(0, 14) + '…' : choice;
+      cl.textContent = choiceText.length > 15 ? choiceText.substring(0, 14) + '…' : choiceText;
       g.appendChild(cl);
     });
   }
@@ -375,7 +379,18 @@ function renderEdge(e) {
   const toNode = nodes.get(e.to);
   if (!fromNode || !toNode) return;
 
-  const x1 = fromNode.x, y1 = fromNode.y + NODE_H;
+  // Determine start point based on port type
+  let x1 = fromNode.x, y1 = fromNode.y + NODE_H;
+
+  if (e.fromPort && e.fromPort.startsWith('choice:')) {
+    const choiceIdx = parseInt(e.fromPort.split(':')[1], 10);
+    const choices = fromNode.choices || [];
+    if (choices.length > 0) {
+      const spacing = NODE_W / (choices.length + 1);
+      x1 = (fromNode.x - NODE_W / 2) + spacing * (choiceIdx + 1);
+    }
+  }
+
   const x2 = toNode.x, y2 = toNode.y;
 
   const dy = Math.abs(y2 - y1);
@@ -415,14 +430,34 @@ canvas.addEventListener('mousedown', (e) => {
   const port = e.target.closest('.port');
   const nodeGroup = e.target.closest('.node-group');
 
-  if (port && port.dataset.portType === 'out') {
+  if (port && (port.dataset.portType === 'out' || port.dataset.portType === 'choice')) {
+    const fromId = port.dataset.nodeId;
+    const fromPort = port.dataset.portType === 'choice' ? 'choice:' + port.dataset.choiceIndex : 'bottom';
+
+    // Check if this port already has an outgoing edge
+    const hasExisting = Array.from(edges.values()).some(e => e.from === fromId && e.fromPort === fromPort);
+    if (hasExisting) {
+      // Port already connected — don't allow another connection
+      e.stopPropagation();
+      return;
+    }
+
     // Start connection
     dragState = 'connecting';
     viewport.classList.add('connecting');
-    pendingConn = { fromId: port.dataset.nodeId, fromPort: port.dataset.portType };
-    const fromNode = nodes.get(pendingConn.fromId);
-    pendingEdgeLine.setAttribute('x1', fromNode.x);
-    pendingEdgeLine.setAttribute('y1', fromNode.y + NODE_H);
+    pendingConn = { fromId, fromPort };
+    const fromNode = nodes.get(fromId);
+    let startX = fromNode.x, startY = fromNode.y + NODE_H;
+    if (port.dataset.portType === 'choice') {
+      const choiceIdx = parseInt(port.dataset.choiceIndex, 10);
+      const choiceCount = (fromNode.choices || []).length;
+      if (choiceCount > 0) {
+        const spacing = NODE_W / (choiceCount + 1);
+        startX = (fromNode.x - NODE_W / 2) + spacing * (choiceIdx + 1);
+      }
+    }
+    pendingEdgeLine.setAttribute('x1', startX);
+    pendingEdgeLine.setAttribute('y1', startY);
     pendingEdgeLine.style.display = '';
     e.stopPropagation();
     return;
@@ -530,6 +565,34 @@ function hideCtxMenu() { if (ctxMenu) { ctxMenu.remove(); ctxMenu = null; } }
 canvas.addEventListener('contextmenu', (e) => {
   e.preventDefault();
   hideCtxMenu();
+
+  // Check if right-clicking on a choice port
+  const port = e.target.closest('.port');
+  if (port && port.dataset.portType === 'choice') {
+    const nodeId = port.dataset.nodeId;
+    const node = nodes.get(nodeId);
+    const choiceLine = parseInt(port.dataset.choiceLine, 10);
+    const choiceIdx = parseInt(port.dataset.choiceIndex, 10);
+    if (node && choiceLine >= 0) {
+      const choiceObj = node.choices && node.choices[choiceIdx];
+      const choiceText = choiceObj ? (typeof choiceObj === 'object' ? choiceObj.text : choiceObj) : 'Choice';
+
+      ctxMenu = document.createElement('div');
+      ctxMenu.className = 'ctx-menu';
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top = e.clientY + 'px';
+
+      addCtxItem('Go to "' + choiceText + '"', () => vscodeApi.postMessage({ type: 'navigate', file: node.file, line: choiceLine }));
+      const choicePort = 'choice:' + choiceIdx;
+      const choiceHasEdge = Array.from(edges.values()).some(e => e.from === nodeId && e.fromPort === choicePort);
+      if (!choiceHasEdge) {
+        addCtxItem('Add Jump from this choice...', () => showConnectDialog(nodeId, 'jump'));
+      }
+      document.body.appendChild(ctxMenu);
+      return;
+    }
+  }
+
   const nodeGroup = e.target.closest('.node-group');
   if (!nodeGroup) return;
 
@@ -545,8 +608,11 @@ canvas.addEventListener('contextmenu', (e) => {
   addCtxItem('Go to Definition', () => vscodeApi.postMessage({ type: 'navigate', file: node.file, line: node.line }));
   addCtxItem('Warp to "' + node.label + '"', () => vscodeApi.postMessage({ type: 'warp', file: node.file, line: node.line }));
   addCtxSep();
-  addCtxItem('Add Jump from here...', () => showConnectDialog(nodeId, 'jump'));
-  addCtxItem('Add Call from here...', () => showConnectDialog(nodeId, 'call'));
+  const hasBottomEdge = Array.from(edges.values()).some(e => e.from === nodeId && e.fromPort === 'bottom');
+  if (!hasBottomEdge) {
+    addCtxItem('Add Jump from here...', () => showConnectDialog(nodeId, 'jump'));
+    addCtxItem('Add Call from here...', () => showConnectDialog(nodeId, 'call'));
+  }
   addCtxItem('Add Menu...', () => vscodeApi.postMessage({ type: 'createMenu', parentLabel: nodeId, choices: ['Choice 1', 'Choice 2'] }));
   addCtxSep();
   addCtxItem('Edit Dialogue...', () => showEditDialog(node));
