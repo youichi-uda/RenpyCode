@@ -110,20 +110,13 @@ export class NodeEditorProvider {
         }
       });
 
-      // Determine node type
-      const hasOutgoing = edges.some(e => e.from === name);
-      let type: EditorNode['type'] = 'normal';
-      if (name === 'start') type = 'start';
-      else if (hasMenu) type = 'choice';
-      else if (!hasOutgoing && !hasReturn) type = 'dead_end';
-
       // Use saved position or default
       const pos = this._positions.get(name) || { x: 0, y: 0 };
 
       nodes.push({
         id: name,
         label: name,
-        type,
+        type: hasMenu ? 'choice' : (name === 'start' ? 'start' : 'normal'),
         x: pos.x,
         y: pos.y,
         width: 200,
@@ -139,16 +132,17 @@ export class NodeEditorProvider {
       });
     }
 
-    // Mark orphan nodes (no incoming edges and not 'start')
-    const hasIncoming = new Set(edges.map(e => e.to));
+    // Build edge lookup sets for O(1) type determination
+    const outgoingSet = new Set(edges.map(e => e.from));
+    const incomingSet = new Set(edges.map(e => e.to));
+
+    // Determine node types using Set lookups (O(1) per node)
     for (const node of nodes) {
-      if (node.type === 'normal' && !hasIncoming.has(node.id) && node.id !== 'start') {
+      if (node.type === 'start' || node.type === 'choice') continue;
+      if (!incomingSet.has(node.id) && node.id !== 'start') {
         node.type = 'orphan';
-      }
-      // Re-check dead_end with final edge list
-      if (node.type !== 'start' && node.type !== 'choice' && node.type !== 'orphan') {
-        const hasOut = edges.some(e => e.from === node.id);
-        if (!hasOut && !node.hasReturn) node.type = 'dead_end';
+      } else if (!outgoingSet.has(node.id) && !node.hasReturn) {
+        node.type = 'dead_end';
       }
     }
 
@@ -156,8 +150,9 @@ export class NodeEditorProvider {
     const needsLayout = nodes.every(n => n.x === 0 && n.y === 0);
     if (needsLayout && nodes.length > 0) {
       const positions = autoLayout(nodes, edges);
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
       for (const pos of positions) {
-        const node = nodes.find(n => n.id === pos.id);
+        const node = nodeMap.get(pos.id);
         if (node) {
           node.x = pos.x;
           node.y = pos.y;

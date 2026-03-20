@@ -18,7 +18,8 @@ export type Feature =
   | 'atl-preview'
   | 'save-inspector'
   | 'refactoring'
-  | 'profiler';
+  | 'profiler'
+  | 'character-wizard';
 
 const GUMROAD_PRODUCT_ID = 'uBzcDZR8buavqlk0kPmraw==';
 const GUMROAD_VERIFY_URL = 'https://api.gumroad.com/v2/licenses/verify';
@@ -137,6 +138,7 @@ export class LicenseManager {
       'save-inspector': vscode.l10n.t('Save Inspector'),
       'refactoring': vscode.l10n.t('Refactoring Tools'),
       'profiler': vscode.l10n.t('Performance Profiler'),
+      'character-wizard': vscode.l10n.t('Character Wizard'),
     };
 
     const enterKey = vscode.l10n.t('Enter License Key');

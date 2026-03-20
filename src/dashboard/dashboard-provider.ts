@@ -71,6 +71,9 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
         case 'profileProject':
           vscode.commands.executeCommand('renpyCode.profileProject');
           break;
+        case 'showCharacterWizard':
+          vscode.commands.executeCommand('renpyCode.showCharacterWizard');
+          break;
       }
     });
   }
@@ -153,6 +156,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     <button class="btn secondary" onclick="send('showFlowGraph')">🗺 ${localize('Flow Graph', 'フローグラフ')}</button>
     <button class="btn secondary" onclick="send('showPreview')">👁 ${localize('Live Preview', 'ライブプレビュー')}</button>
     <button class="btn secondary" onclick="send('showHeatmap')">🔥 ${localize('Heatmap', 'ヒートマップ')}</button>
+    <button class="btn secondary" onclick="send('showCharacterWizard')">👤 ${localize('Character Wizard', 'キャラクターウィザード')}</button>
     <button class="btn secondary" onclick="send('showAssets')">🖼 ${localize('Asset Manager', 'アセットマネージャ')}</button>
     <button class="btn secondary" onclick="send('showTranslation')">🌐 ${localize('Translation', '翻訳')}</button>
     <button class="btn secondary" onclick="send('runAllTests')">🧪 ${localize('Run Tests', 'テスト実行')}</button>

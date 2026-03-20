@@ -42,5 +42,6 @@
   "command.renameSymbol": "RenPy Code: Rename Symbol",
   "command.refreshVariables": "RenPy Code: Refresh Variables",
   "command.profileProject": "RenPy Code: Profile Project Performance",
+  "command.showCharacterWizard": "RenPy Code: Character Wizard",
   "command.killGame": "RenPy Code: Kill Game"
 }

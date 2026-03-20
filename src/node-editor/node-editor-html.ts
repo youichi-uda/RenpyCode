@@ -272,16 +272,55 @@ function rebuildFromGraph(g) {
 }
 
 // ── Rendering ──
+let _nodeEls = new Map();  // nodeId -> SVG <g> element
+let _edgeEls = new Map();  // edgeId -> SVG <path> element
+let _rafId = 0;
+
 function renderAll() {
+  const nodeFrag = document.createDocumentFragment();
+  const edgeFrag = document.createDocumentFragment();
+  _nodeEls.clear();
+  _edgeEls.clear();
+
+  for (const e of edges.values()) renderEdge(e, edgeFrag);
+  for (const n of nodes.values()) renderNode(n, nodeFrag);
+
   nodesLayer.innerHTML = '';
   edgesLayer.innerHTML = '';
-
-  for (const e of edges.values()) renderEdge(e);
-  for (const n of nodes.values()) renderNode(n);
-  updateMinimap();
+  nodesLayer.appendChild(nodeFrag);
+  edgesLayer.appendChild(edgeFrag);
+  scheduleMinimapUpdate();
 }
 
-function renderNode(n) {
+/** Update selection CSS classes without DOM rebuild */
+function updateSelection() {
+  for (const [id, el] of _nodeEls) {
+    if (selection.has(id)) el.classList.add('selected');
+    else el.classList.remove('selected');
+  }
+}
+
+/** Fast position-only update — no DOM rebuild */
+function updatePositions() {
+  for (const n of nodes.values()) {
+    const el = _nodeEls.get(n.id);
+    if (el) el.setAttribute('transform', 'translate(' + (n.x - NODE_W/2) + ',' + n.y + ')');
+  }
+  for (const e of edges.values()) {
+    const el = _edgeEls.get(e.id);
+    if (el) updateEdgePath(el, e);
+  }
+  scheduleMinimapUpdate();
+}
+
+let _mmTimer = 0;
+function scheduleMinimapUpdate() {
+  if (_mmTimer) return;
+  const delay = nodes.size > 200 ? 500 : 200;
+  _mmTimer = setTimeout(() => { _mmTimer = 0; updateMinimap(); }, delay);
+}
+
+function renderNode(n, parent) {
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   g.classList.add('node-group', 'node-' + n.type);
   if (selection.has(n.id)) g.classList.add('selected');
@@ -371,10 +410,11 @@ function renderNode(n) {
     });
   }
 
-  nodesLayer.appendChild(g);
+  (parent || nodesLayer).appendChild(g);
+  _nodeEls.set(n.id, g);
 }
 
-function renderEdge(e) {
+function renderEdge(e, parent) {
   const fromNode = nodes.get(e.from);
   const toNode = nodes.get(e.to);
   if (!fromNode || !toNode) return;
@@ -401,7 +441,28 @@ function renderEdge(e) {
   path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+cp) + ', ' + x2 + ' ' + (y2-cp) + ', ' + x2 + ' ' + y2);
   path.setAttribute('marker-end', 'url(#arrow-' + e.type + ')');
   path.dataset.edgeId = e.id;
-  edgesLayer.appendChild(path);
+  (parent || edgesLayer).appendChild(path);
+  _edgeEls.set(e.id, path);
+}
+
+function updateEdgePath(path, e) {
+  const fromNode = nodes.get(e.from);
+  const toNode = nodes.get(e.to);
+  if (!fromNode || !toNode) return;
+
+  let x1 = fromNode.x, y1 = fromNode.y + NODE_H;
+  if (e.fromPort && e.fromPort.startsWith('choice:')) {
+    const choiceIdx = parseInt(e.fromPort.split(':')[1], 10);
+    const choices = fromNode.choices || [];
+    if (choices.length > 0) {
+      const spacing = NODE_W / (choices.length + 1);
+      x1 = (fromNode.x - NODE_W / 2) + spacing * (choiceIdx + 1);
+    }
+  }
+  const x2 = toNode.x, y2 = toNode.y;
+  const dy = Math.abs(y2 - y1);
+  const cp = Math.max(50, dy * 0.4);
+  path.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1+cp) + ', ' + x2 + ' ' + (y2-cp) + ', ' + x2 + ' ' + y2);
 }
 
 // ── Transform ──
@@ -477,7 +538,7 @@ canvas.addEventListener('mousedown', (e) => {
       if (n) moveStart.set(id, { x: n.x, y: n.y });
     }
     dragStart = { x: e.clientX, y: e.clientY };
-    renderAll();
+    updateSelection();
     e.stopPropagation();
     return;
   }
@@ -492,7 +553,7 @@ viewport.addEventListener('mousedown', (e) => {
   dragStart = { x: e.clientX, y: e.clientY };
   panStart = { x: panX, y: panY };
   selection.clear();
-  renderAll();
+  updateSelection();
 });
 
 window.addEventListener('mousemove', (e) => {
@@ -511,7 +572,7 @@ window.addEventListener('mousemove', (e) => {
         n.y = orig.y + dy;
       }
     }
-    renderAll();
+    updatePositions();
   } else if (dragState === 'connecting') {
     const rect = viewport.getBoundingClientRect();
     const mx = (e.clientX - rect.left - panX) / scale;
@@ -768,18 +829,20 @@ function updateMinimap() {
   const gh = maxY - minY + pad*2;
   const mmW = 180, mmH = 120;
   const mmScale = Math.min(mmW / gw, mmH / gh);
+  const colors = { start: '#4CAF50', normal: '#2196F3', choice: '#FF9800', dead_end: '#f44336', orphan: '#9E9E9E' };
+  const frag = document.createDocumentFragment();
 
   for (const n of nodes.values()) {
     const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    const colors = { start: '#4CAF50', normal: '#2196F3', choice: '#FF9800', dead_end: '#f44336', orphan: '#9E9E9E' };
     r.setAttribute('x', (n.x - NODE_W/2 - minX + pad) * mmScale);
     r.setAttribute('y', (n.y - minY + pad) * mmScale);
     r.setAttribute('width', NODE_W * mmScale);
     r.setAttribute('height', NODE_H * mmScale);
     r.setAttribute('fill', colors[n.type] || '#555');
     r.setAttribute('rx', 2);
-    mmContent.appendChild(r);
+    frag.appendChild(r);
   }
+  mmContent.appendChild(frag);
 
   // Viewport rect
   const vw = viewport.clientWidth;

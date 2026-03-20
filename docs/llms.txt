@@ -1,0 +1,58 @@
+# RenPy Code
+
+> RenPy Code is a VS Code extension that provides a complete IDE experience for Ren'Py visual novel development. It offers 30+ language features for free and advanced Pro features for a one-time $5 license.
+
+## Overview
+
+RenPy Code turns Visual Studio Code into a full-featured IDE for the Ren'Py visual novel engine. It supports Ren'Py SDK 7.x and 8.x on Windows, macOS, and Linux, and requires VS Code 1.85+.
+
+## Free Features
+
+- Syntax highlighting with TextMate grammar and semantic tokens
+- Context-aware autocompletion for labels, characters, screens, statements, built-in classes, and screen keywords
+- Hover documentation for 100+ Ren'Py statements (English and Japanese)
+- Go to Definition and Find All References for labels, characters, screens, images, and transforms
+- Document and workspace symbol search (outline view and Ctrl+T)
+- Real-time diagnostics: undefined labels, undefined characters, invalid jump targets, mixed indentation, unused labels, missing resources, unreachable code
+- CodeLens showing reference counts above label and screen definitions
+- Inlay hints for character display names, jump targets, and dialogue word counts
+- Code actions (quick fixes) for missing labels and characters
+- Signature help for Character(), Dissolve, Fade, and other built-in constructors
+- Clickable document links for file paths in strings
+- Color picker for hex colors in Character definitions
+- Indent-based and block-aware code folding
+- Incoming/outgoing call hierarchy for labels
+- 15+ code snippets for labels, menus, characters, screens, transforms, and more
+- Game launch, lint, and warp to line/label from the command palette
+- Dashboard sidebar with project stats, bridge status, and quick actions
+- Full English and Japanese localization
+
+## Pro Features ($5 one-time lifetime license)
+
+- Interactive DAP Debugger: breakpoints in .rpy files, step over/into/out, variable inspection, call stack, debug console
+- Story Flow Graph: interactive Mermaid.js visualization of jump/call relationships between labels
+- Live Preview: screenshot-based scene preview from the running game inside VS Code
+- Variable Tracker: real-time monitoring of game variables
+- Playtest Heatmap: visit frequency visualization for story paths
+- Asset Manager: visual browser with unused asset detection
+- Translation Dashboard: completion tracking and untranslated string finder
+- Test Runner: discover and run Ren'Py testcases from VS Code
+- Refactoring: safe rename of labels, characters, and screens across the project; route extraction
+
+## Installation
+
+1. Search "RenPy Code" in the VS Code Extensions panel, or run: code --install-extension abyo-software.renpy-code
+2. Set renpyCode.sdkPath in VS Code settings to your Ren'Py SDK directory
+3. Open a Ren'Py project folder (containing game/) and start editing .rpy files
+
+## Links
+
+- Website: https://renpy-code.abyo.net/
+- VS Code Marketplace: https://marketplace.visualstudio.com/items?itemName=abyo-software.renpy-code
+- GitHub: https://github.com/youichi-uda/renpy-code
+- Pro License: https://y1uda.gumroad.com/l/renpycode
+- Demo Video: https://youtu.be/D7UEZt3k1hQ
+
+## Publisher
+
+abyo-software (Youichi Uda) — https://abyo.net

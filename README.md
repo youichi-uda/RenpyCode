@@ -4,6 +4,10 @@ Complete Ren'Py development suite for Visual Studio Code — syntax highlighting
 
 English | **[日本語](README.ja.md)**
 
+[![Demo Video](https://img.youtube.com/vi/D7UEZt3k1hQ/maxresdefault.jpg)](https://youtu.be/D7UEZt3k1hQ)
+
+> **[Watch the demo video](https://youtu.be/D7UEZt3k1hQ)** — Flow Graph, Live Preview, Debugger, Warp to Label, and runtime variable editing in action.
+
 ## Features
 
 ### Free

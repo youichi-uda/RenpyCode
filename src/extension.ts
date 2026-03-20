@@ -55,6 +55,7 @@ import { AssetProvider } from './assets/asset-provider';
 import { TranslationProvider } from './translation/translation-provider';
 import { TestRunnerProvider } from './test-runner/test-runner';
 import { RefactorProvider } from './refactor/refactor-provider';
+import { CharacterWizard } from './character/character-wizard';
 import { RenpyDebugSession } from './debugger/debug-adapter';
 import { localize } from './language/i18n';
 import { ProjectProfiler } from './profiler/profiler';
@@ -479,6 +480,24 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // ══════════════════════════════════════════════════════════
+  //  PRO: Character Wizard
+  // ══════════════════════════════════════════════════════════
+
+  const characterWizard = new CharacterWizard(getIndex);
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('renpyCode.showCharacterWizard', async () => {
+      if (!(await licenseManager.requirePro('character-wizard'))) return;
+
+      if (indexer.getIndex().files.size === 0) {
+        await indexer.indexWorkspace();
+      }
+
+      await characterWizard.show();
+    }),
+  );
+
+  // ══════════════════════════════════════════════════════════
   //  PRO: Translation Dashboard
   // ══════════════════════════════════════════════════════════
 
@@ -558,6 +577,7 @@ export function activate(context: vscode.ExtensionContext): void {
     { dispose: () => previewProvider.dispose() },
     { dispose: () => heatmapProvider.dispose() },
     { dispose: () => assetProvider.dispose() },
+    { dispose: () => characterWizard.dispose() },
     { dispose: () => translationProvider.dispose() },
     { dispose: () => testRunnerProvider.dispose() },
     { dispose: () => variableTracker.dispose() },

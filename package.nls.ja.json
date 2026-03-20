@@ -42,5 +42,6 @@
   "command.renameSymbol": "RenPy Code: シンボルをリネーム",
   "command.refreshVariables": "RenPy Code: 変数を更新",
   "command.profileProject": "RenPy Code: プロジェクトパフォーマンスプロファイル",
+  "command.showCharacterWizard": "RenPy Code: キャラクターウィザード",
   "command.killGame": "RenPy Code: ゲームを停止"
 }

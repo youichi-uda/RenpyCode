@@ -4,6 +4,10 @@ Visual Studio Code 向けの Ren'Py 統合開発環境 — シンタックスハ
 
 **[English](README.md)** | 日本語
 
+[![デモ動画](https://img.youtube.com/vi/D7UEZt3k1hQ/maxresdefault.jpg)](https://youtu.be/D7UEZt3k1hQ)
+
+> **[デモ動画を見る](https://youtu.be/D7UEZt3k1hQ)** — フローグラフ、ライブプレビュー、デバッガー、ラベルワープ、実行時変数編集のデモ。
+
 ## 機能
 
 ### 無料
