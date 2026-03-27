@@ -37,11 +37,16 @@
   "command.showTranslation": "RenPy Code: Show Translation Dashboard",
   "command.runAllTests": "RenPy Code: Run All Tests",
   "command.runTest": "RenPy Code: Run Test...",
+  "command.createTestcase": "RenPy Code: Create Testcase",
   "command.extractRoute": "RenPy Code: Extract Route...",
   "command.insertDialogue": "RenPy Code: Insert Dialogue",
   "command.renameSymbol": "RenPy Code: Rename Symbol",
   "command.refreshVariables": "RenPy Code: Refresh Variables",
   "command.profileProject": "RenPy Code: Profile Project Performance",
   "command.showCharacterWizard": "RenPy Code: Character Wizard",
-  "command.killGame": "RenPy Code: Kill Game"
+  "command.killGame": "RenPy Code: Kill Game",
+  "bridge.connected": "Connected",
+  "bridge.label": "Bridge",
+  "bridge.tooltip.connected": "Ren'Py bridge connected",
+  "bridge.tooltip.disconnected": "Ren'Py bridge disconnected"
 }

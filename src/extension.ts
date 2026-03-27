@@ -116,6 +116,14 @@ export function activate(context: vscode.ExtensionContext): void {
   dashboard.updateLicense(licenseManager.isProLicensed);
   licenseManager.onDidChange((isValid) => dashboard.updateLicense(isValid));
 
+  // Setup checklist
+  const updateDashboardSetup = () => {
+    const sdkPathSet = !!runner.getSDKPath();
+    const gameFolderFound = !!runner.getProjectRoot();
+    dashboard.updateSetup(sdkPathSet, gameFolderFound);
+  };
+  updateDashboardSetup();
+
   // Update bridge status on dashboard
   bridge.onStateChanged((state) => {
     dashboard.updateBridge(state.connected, state.label || '');
@@ -246,6 +254,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('renpyCode.license.key')) {
         licenseManager.onLicenseKeyChanged();
+      }
+      if (e.affectsConfiguration('renpyCode.sdkPath')) {
+        updateDashboardSetup();
       }
       if (e.affectsConfiguration('renpyCode')) {
         vscode.workspace.textDocuments.forEach(analyzeDocument);
@@ -525,6 +536,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!(await licenseManager.requirePro('auto-test'))) return;
       await testRunnerProvider.pickAndRunTest();
     }),
+    vscode.commands.registerCommand('renpyCode.createTestcase', async () => {
+      await testRunnerProvider.createTestcase();
+    }),
   );
 
   // ══════════════════════════════════════════════════════════
@@ -605,13 +619,16 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Bridge status bar
   const bridgeStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 49);
+  bridgeStatus.command = 'renpyCode.dashboard.focus';
   bridge.onStateChanged((state) => {
     if (state.connected) {
-      bridgeStatus.text = `$(plug) ${state.label || 'Connected'}`;
-      bridgeStatus.tooltip = 'Ren\'Py bridge connected';
+      bridgeStatus.text = `$(plug) ${state.label || localize('Connected', '接続済み')}`;
+      bridgeStatus.tooltip = localize('Ren\'Py bridge connected', 'Ren\'Pyブリッジ接続中');
+      bridgeStatus.backgroundColor = undefined;
     } else {
-      bridgeStatus.text = '$(debug-disconnect) Bridge';
-      bridgeStatus.tooltip = 'Ren\'Py bridge disconnected';
+      bridgeStatus.text = `$(debug-disconnect) ${localize('Bridge', 'ブリッジ')}`;
+      bridgeStatus.tooltip = localize('Ren\'Py bridge disconnected', 'Ren\'Pyブリッジ未接続');
+      bridgeStatus.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
     }
   });
   bridgeStatus.show();

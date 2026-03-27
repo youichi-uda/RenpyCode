@@ -204,6 +204,10 @@
         "title": "%command.runTest%"
       },
       {
+        "command": "renpyCode.createTestcase",
+        "title": "%command.createTestcase%"
+      },
+      {
         "command": "renpyCode.extractRoute",
         "title": "%command.extractRoute%"
       },

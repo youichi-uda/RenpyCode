@@ -5,6 +5,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { ProjectIndex } from '../parser/types';
 import { RenpyRunner } from '../runner/renpy-runner';
 import { localize } from '../language/i18n';
@@ -131,13 +132,76 @@ export class TestRunnerProvider {
   }
 
   /**
+   * Create a new testcase snippet in a .rpy file.
+   * If there's an active .rpy editor, uses that file; otherwise looks for
+   * game/script.rpy or any .rpy file in the game/ directory.
+   */
+  async createTestcase(): Promise<void> {
+    const activeEditor = vscode.window.activeTextEditor;
+    let targetUri: vscode.Uri | undefined;
+
+    if (activeEditor && activeEditor.document.fileName.endsWith('.rpy')) {
+      targetUri = activeEditor.document.uri;
+    } else {
+      const projectRoot = this.runner.getProjectRoot();
+      if (!projectRoot) {
+        vscode.window.showErrorMessage(localize('No Ren\'Py project found.', 'Ren\'Pyプロジェクトが見つかりません。'));
+        return;
+      }
+
+      const scriptPath = path.join(projectRoot, 'game', 'script.rpy');
+      const fs = require('fs');
+      if (fs.existsSync(scriptPath)) {
+        targetUri = vscode.Uri.file(scriptPath);
+      } else {
+        const gameDir = path.join(projectRoot, 'game');
+        const rpyFiles = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(gameDir, '**/*.rpy'),
+          undefined,
+          1,
+        );
+        if (rpyFiles.length > 0) {
+          targetUri = rpyFiles[0];
+        }
+      }
+    }
+
+    if (!targetUri) {
+      vscode.window.showErrorMessage(localize('No .rpy file found to insert testcase.', 'テストケースを挿入する.rpyファイルが見つかりません。'));
+      return;
+    }
+
+    const doc = await vscode.workspace.openTextDocument(targetUri);
+    const editor = await vscode.window.showTextDocument(doc);
+
+    // Move cursor to end of file with a blank line separator
+    const lastLine = doc.lineCount - 1;
+    const lastChar = doc.lineAt(lastLine).text.length;
+    const endPos = new vscode.Position(lastLine, lastChar);
+    editor.selection = new vscode.Selection(endPos, endPos);
+
+    const prefix = doc.getText().endsWith('\n') ? '\n' : '\n\n';
+    const snippet = new vscode.SnippetString(
+      `${prefix}testcase \${1:my_test}:\n    "\${2:Click to continue.}"\n    click\n`,
+    );
+    await editor.insertSnippet(snippet, endPos);
+  }
+
+  /**
    * Run all testcases and show results.
    */
   async runAllTests(): Promise<void> {
     const tests = this.listTests();
 
     if (tests.length === 0) {
-      vscode.window.showWarningMessage(vscode.l10n.t('No testcases found in the project.'));
+      const createAction = localize('Create Testcase', 'テストケースを作成');
+      const selection = await vscode.window.showWarningMessage(
+        vscode.l10n.t('No testcases found in the project.'),
+        createAction,
+      );
+      if (selection === createAction) {
+        await this.createTestcase();
+      }
       return;
     }
 
@@ -184,7 +248,14 @@ export class TestRunnerProvider {
   async pickAndRunTest(): Promise<void> {
     const tests = this.listTests();
     if (tests.length === 0) {
-      vscode.window.showWarningMessage(vscode.l10n.t('No testcases found.'));
+      const createAction = localize('Create Testcase', 'テストケースを作成');
+      const selection = await vscode.window.showWarningMessage(
+        vscode.l10n.t('No testcases found.'),
+        createAction,
+      );
+      if (selection === createAction) {
+        await this.createTestcase();
+      }
       return;
     }
 

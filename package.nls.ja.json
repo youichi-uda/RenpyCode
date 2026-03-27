@@ -37,11 +37,16 @@
   "command.showTranslation": "RenPy Code: 翻訳ダッシュボードを表示",
   "command.runAllTests": "RenPy Code: 全テスト実行",
   "command.runTest": "RenPy Code: テストを実行...",
+  "command.createTestcase": "RenPy Code: テストケースを作成",
   "command.extractRoute": "RenPy Code: ルートを抽出...",
   "command.insertDialogue": "RenPy Code: ダイアログを挿入",
   "command.renameSymbol": "RenPy Code: シンボルをリネーム",
   "command.refreshVariables": "RenPy Code: 変数を更新",
   "command.profileProject": "RenPy Code: プロジェクトパフォーマンスプロファイル",
   "command.showCharacterWizard": "RenPy Code: キャラクターウィザード",
-  "command.killGame": "RenPy Code: ゲームを停止"
+  "command.killGame": "RenPy Code: ゲームを停止",
+  "bridge.connected": "接続済み",
+  "bridge.label": "ブリッジ",
+  "bridge.tooltip.connected": "Ren'Pyブリッジ接続中",
+  "bridge.tooltip.disconnected": "Ren'Pyブリッジ未接続"
 }

@@ -14,6 +14,8 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   private _isProLicensed = false;
   private _bridgeConnected = false;
   private _currentLabel = '';
+  private _sdkPathSet = false;
+  private _gameFolderFound = false;
 
   constructor(private extensionUri: vscode.Uri) {}
 
@@ -74,8 +76,17 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
         case 'showCharacterWizard':
           vscode.commands.executeCommand('renpyCode.showCharacterWizard');
           break;
+        case 'openSdkSettings':
+          vscode.commands.executeCommand('workbench.action.openSettings', 'renpyCode.sdkPath');
+          break;
       }
     });
+  }
+
+  updateSetup(sdkPathSet: boolean, gameFolderFound: boolean): void {
+    this._sdkPathSet = sdkPathSet;
+    this._gameFolderFound = gameFolderFound;
+    this.postMessage({ type: 'setup', sdkPathSet, gameFolderFound, bridgeConnected: this._bridgeConnected });
   }
 
   updateStats(files: number, labels: number, characters: number, variables: number): void {
@@ -92,6 +103,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     this._bridgeConnected = connected;
     this._currentLabel = currentLabel;
     this.postMessage({ type: 'bridge', connected, currentLabel });
+    this.postMessage({ type: 'setup', sdkPathSet: this._sdkPathSet, gameFolderFound: this._gameFolderFound, bridgeConnected: connected });
   }
 
   private postMessage(msg: Record<string, unknown>): void {
@@ -124,12 +136,37 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   .bridge-dot.connected { background: #4CAF50; }
   .bridge-dot.disconnected { background: #f44336; }
   .section { margin-bottom: 16px; }
+  .setup-checklist { background: var(--vscode-editor-background); border-radius: 4px; padding: 10px; margin-bottom: 12px; border-left: 3px solid var(--vscode-editorWarning-foreground); }
+  .setup-checklist h2 { margin-top: 0; }
+  .setup-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }
+  .setup-item .check-ok { color: #4CAF50; font-weight: bold; }
+  .setup-item .check-fail { color: var(--vscode-editorWarning-foreground); font-weight: bold; }
+  .setup-item a { color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: underline; }
+  .setup-item .setup-label { flex: 1; }
 </style>
 </head>
 <body>
   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
     <strong>RenPy Code</strong>
     <span id="licenseBadge" class="license-badge ${this._isProLicensed ? 'pro' : 'free'}">${proLabel}</span>
+  </div>
+
+  <div id="setupChecklist" class="setup-checklist" style="${this._sdkPathSet && this._gameFolderFound && this._bridgeConnected ? 'display:none' : ''}">
+    <h2>${localize('Setup Checklist', 'セットアップチェックリスト')}</h2>
+    <div class="setup-item">
+      <span id="setupSdkIcon" class="${this._sdkPathSet ? 'check-ok' : 'check-fail'}">${this._sdkPathSet ? '\u2713' : '\u2717'}</span>
+      <span class="setup-label">${localize('SDK Path', 'SDKパス')}</span>
+      <a id="setupSdkLink" onclick="send('openSdkSettings')" style="${this._sdkPathSet ? 'display:none' : ''}">${localize('Configure', '設定する')}</a>
+    </div>
+    <div class="setup-item">
+      <span id="setupGameIcon" class="${this._gameFolderFound ? 'check-ok' : 'check-fail'}">${this._gameFolderFound ? '\u2713' : '\u2717'}</span>
+      <span class="setup-label">${localize('game/ folder', 'game/ フォルダ')}</span>
+      <span id="setupGameHint" style="font-size:11px; color:var(--vscode-descriptionForeground); ${this._gameFolderFound ? 'display:none' : ''}">${localize('Open the project root containing game/', 'game/を含むプロジェクトルートを開いてください')}</span>
+    </div>
+    <div class="setup-item">
+      <span id="setupBridgeIcon" class="${this._bridgeConnected ? 'check-ok' : 'check-fail'}">${this._bridgeConnected ? '\u2713' : '\u2717'}</span>
+      <span class="setup-label">${localize('Bridge', 'ブリッジ')}</span>
+    </div>
   </div>
 
   <div class="section">
@@ -192,6 +229,20 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
         badge.className = 'license-badge ' + (msg.isProLicensed ? 'pro' : 'free');
         badge.textContent = msg.isProLicensed ? 'Pro' : 'Free';
         document.getElementById('licenseSection').style.display = msg.isProLicensed ? 'none' : '';
+      } else if (msg.type === 'setup') {
+        const sdkIcon = document.getElementById('setupSdkIcon');
+        sdkIcon.className = msg.sdkPathSet ? 'check-ok' : 'check-fail';
+        sdkIcon.textContent = msg.sdkPathSet ? '\u2713' : '\u2717';
+        document.getElementById('setupSdkLink').style.display = msg.sdkPathSet ? 'none' : '';
+        const gameIcon = document.getElementById('setupGameIcon');
+        gameIcon.className = msg.gameFolderFound ? 'check-ok' : 'check-fail';
+        gameIcon.textContent = msg.gameFolderFound ? '\u2713' : '\u2717';
+        document.getElementById('setupGameHint').style.display = msg.gameFolderFound ? 'none' : '';
+        const bridgeIcon = document.getElementById('setupBridgeIcon');
+        bridgeIcon.className = msg.bridgeConnected ? 'check-ok' : 'check-fail';
+        bridgeIcon.textContent = msg.bridgeConnected ? '\u2713' : '\u2717';
+        const allDone = msg.sdkPathSet && msg.gameFolderFound && msg.bridgeConnected;
+        document.getElementById('setupChecklist').style.display = allDone ? 'none' : '';
       } else if (msg.type === 'bridge') {
         const dot = document.getElementById('bridgeDot');
         dot.className = 'bridge-dot ' + (msg.connected ? 'connected' : 'disconnected');

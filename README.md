@@ -26,7 +26,7 @@ English | **[日本語](README.ja.md)**
 - **Color Picker** — Hex color swatches in Character definitions
 - **Code Folding** — Indent-based and block-aware folding
 - **Call Hierarchy** — Incoming/outgoing call analysis for labels
-- **Snippets** — 15+ templates for labels, menus, characters, screens, and more
+- **Snippets** — 40+ templates for labels, menus, characters, screens, and more
 - **Game Runner** — Launch, lint, and warp from the command palette
 - **Dashboard** — Sidebar with project stats, bridge status, and quick actions
 - **Japanese Localization** — Full i18n support
