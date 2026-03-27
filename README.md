@@ -51,6 +51,12 @@ English | **[日本語](README.ja.md)**
 4. Start editing `.rpy` files — completion, hover, and diagnostics work automatically
 5. Press `Ctrl+Shift+P` → **RenPy Code: Launch Game** to run your project
 
+## Setup Tips
+
+> **Open the project root folder** — Open the folder that *contains* the `game/` subfolder, not the `game/` folder itself. For example, if your project is at `C:/MyGame/game/`, open `C:/MyGame/` in VS Code.
+
+> **Launch the game through the extension** — Pro features (Live Preview, Variable Tracker, Heatmap, etc.) require the bridge, which only activates when you use the **"Launch Game"** button in the Dashboard sidebar or `Ctrl+Shift+P` → **RenPy Code: Launch Game**. Launching from the Ren'Py SDK launcher directly will not connect the bridge.
+
 ## Settings
 
 | Setting | Default | Description |
