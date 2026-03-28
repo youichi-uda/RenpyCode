@@ -18,12 +18,35 @@ interface CharacterInfo {
   color?: string;
   /** Image tag (e.g. "eileen") */
   imageTag?: string;
-  /** Who-color */
+  /** Who-styling */
   whoColor?: string;
-  /** What-color */
+  whoFont?: string;
+  whoSize?: string;
+  whoOutlines?: string;
+  whoBold?: string;
+  whoItalic?: string;
+  /** What-styling */
   whatColor?: string;
-  /** Callback parameter */
+  whatFont?: string;
+  whatSize?: string;
+  whatOutlines?: string;
+  whatTextAlign?: string;
+  whatPrefix?: string;
+  whatSuffix?: string;
+  /** Window-styling */
+  windowBackground?: string;
+  windowLeftPadding?: string;
+  windowTopPadding?: string;
+  windowMargin?: string;
+  windowYminimum?: string;
+  /** Advanced properties */
+  kind?: string;
+  dynamic?: string;
+  retain?: string;
+  ctc?: string;
+  ctcPosition?: string;
   callback?: string;
+  multiple?: string;
   /** Source file */
   file: string;
   /** Line number (0-based) */
@@ -43,6 +66,91 @@ interface ExpressionInfo {
   filePath?: string;
   /** Whether defined via `image` statement */
   definedInScript: boolean;
+}
+
+/** Parameters for building a Character define statement. */
+export interface CharacterDefineParams {
+  varName: string;
+  displayName: string;
+  color?: string;
+  imageTag?: string;
+  kind?: string;
+  whoFont?: string;
+  whoSize?: string;
+  whoColor?: string;
+  whoOutlines?: string;
+  whoBold?: boolean;
+  whoItalic?: boolean;
+  whatFont?: string;
+  whatSize?: string;
+  whatColor?: string;
+  whatOutlines?: string;
+  whatTextAlign?: string;
+  whatPrefix?: string;
+  whatSuffix?: string;
+  windowBackground?: string;
+  windowLeftPadding?: string;
+  windowTopPadding?: string;
+  windowMargin?: string;
+  windowYminimum?: string;
+  dynamic?: boolean;
+  retain?: boolean;
+  multiple?: string;
+  ctc?: string;
+  ctcPosition?: string;
+  callback?: string;
+}
+
+/**
+ * Build a Ren'Py Character define statement from form parameters.
+ * Returns null if required fields (varName, displayName) are missing.
+ */
+export function buildDefineStatement(params: CharacterDefineParams): string | null {
+  if (!params.varName || !params.displayName) return null;
+
+  const parts: string[] = [];
+  parts.push(`"${params.displayName}"`);
+
+  // Kind (must be before other params, unquoted)
+  if (params.kind) parts.push(`kind=${params.kind}`);
+
+  // Basic
+  if (params.color) parts.push(`color="${params.color}"`);
+  if (params.imageTag) parts.push(`image="${params.imageTag}"`);
+
+  // Who-styling
+  if (params.whoFont) parts.push(`who_font="${params.whoFont}"`);
+  if (params.whoSize) parts.push(`who_size=${params.whoSize}`);
+  if (params.whoColor) parts.push(`who_color="${params.whoColor}"`);
+  if (params.whoOutlines) parts.push(`who_outlines=${params.whoOutlines}`);
+  if (params.whoBold) parts.push('who_bold=True');
+  if (params.whoItalic) parts.push('who_italic=True');
+
+  // What-styling
+  if (params.whatFont) parts.push(`what_font="${params.whatFont}"`);
+  if (params.whatSize) parts.push(`what_size=${params.whatSize}`);
+  if (params.whatColor) parts.push(`what_color="${params.whatColor}"`);
+  if (params.whatOutlines) parts.push(`what_outlines=${params.whatOutlines}`);
+  if (params.whatTextAlign) parts.push(`what_text_align=${params.whatTextAlign}`);
+  if (params.whatPrefix) parts.push(`what_prefix="${params.whatPrefix}"`);
+  if (params.whatSuffix) parts.push(`what_suffix="${params.whatSuffix}"`);
+
+  // Window-styling
+  if (params.windowBackground) parts.push(`window_background="${params.windowBackground}"`);
+  if (params.windowLeftPadding) parts.push(`window_left_padding=${params.windowLeftPadding}`);
+  if (params.windowTopPadding) parts.push(`window_top_padding=${params.windowTopPadding}`);
+  if (params.windowMargin) parts.push(`window_margin=${params.windowMargin}`);
+  if (params.windowYminimum) parts.push(`window_yminimum=${params.windowYminimum}`);
+
+  // Advanced
+  if (params.dynamic) parts.push('dynamic=True');
+  if (params.retain) parts.push('retain=True');
+  if (params.multiple) parts.push(`multiple=${params.multiple}`);
+  if (params.ctc) parts.push(`ctc=${params.ctc}`);
+  if (params.ctcPosition) parts.push(`ctc_position="${params.ctcPosition}"`);
+  if (params.callback) parts.push(`callback=${params.callback}`);
+
+  return `define ${params.varName} = Character(${parts.join(', ')})`;
 }
 
 export class CharacterWizard {
@@ -121,34 +229,56 @@ export class CharacterWizard {
     const nameMatch = value.match(/Character\s*\(\s*(?:_\s*\(\s*)?["']([^"']+)["']/);
     const displayName = nameMatch ? nameMatch[1] : variable;
 
-    // Extract color
-    const colorMatch = value.match(/color\s*=\s*["']([^"']+)["']/);
-    const color = colorMatch ? colorMatch[1] : undefined;
-
-    // Extract image tag
-    const imageMatch = value.match(/image\s*=\s*["']([^"']+)["']/);
-    const imageTag = imageMatch ? imageMatch[1] : undefined;
-
-    // Extract who_color
-    const whoColorMatch = value.match(/who_color\s*=\s*["']([^"']+)["']/);
-    const whoColor = whoColorMatch ? whoColorMatch[1] : undefined;
-
-    // Extract what_color
-    const whatColorMatch = value.match(/what_color\s*=\s*["']([^"']+)["']/);
-    const whatColor = whatColorMatch ? whatColorMatch[1] : undefined;
-
-    // Extract callback
-    const callbackMatch = value.match(/callback\s*=\s*(\w+)/);
-    const callback = callbackMatch ? callbackMatch[1] : undefined;
+    // Helper: extract string param
+    const str = (key: string) => {
+      const m = value.match(new RegExp(`(?<![\\w])${key}\\s*=\\s*["']([^"']+)["']`));
+      return m ? m[1] : undefined;
+    };
+    // Helper: extract unquoted param (identifiers, numbers, booleans)
+    const raw_ = (key: string) => {
+      const m = value.match(new RegExp(`(?<![\\w])${key}\\s*=\\s*([^,)]+)`));
+      return m ? m[1].trim() : undefined;
+    };
+    // Helper: extract param that could be string or identifier
+    const any_ = (key: string) => str(key) || raw_(key);
 
     return {
       variable,
       displayName,
-      color,
-      imageTag,
-      whoColor,
-      whatColor,
-      callback,
+      color: str('color'),
+      imageTag: str('image'),
+      // Who-styling
+      whoColor: str('who_color'),
+      whoFont: str('who_font'),
+      whoSize: raw_('who_size'),
+      whoOutlines: raw_('who_outlines'),
+      whoBold: raw_('who_bold'),
+      whoItalic: raw_('who_italic'),
+      // What-styling
+      whatColor: str('what_color'),
+      whatFont: str('what_font'),
+      whatSize: raw_('what_size'),
+      whatOutlines: raw_('what_outlines'),
+      whatTextAlign: raw_('what_text_align'),
+      whatPrefix: str('what_prefix'),
+      whatSuffix: str('what_suffix'),
+      // Window-styling
+      windowBackground: str('window_background'),
+      windowLeftPadding: raw_('window_left_padding'),
+      windowTopPadding: raw_('window_top_padding'),
+      windowMargin: raw_('window_margin'),
+      windowYminimum: raw_('window_yminimum'),
+      // Advanced
+      kind: raw_('kind'),
+      dynamic: raw_('dynamic'),
+      retain: raw_('retain'),
+      ctc: (() => {
+        const m = value.match(/(?<!\w)ctc\s*=\s*(?:["']([^"']+)["']|(\w+))/);
+        return m ? (m[1] || m[2]) : undefined;
+      })(),
+      ctcPosition: str('ctc_position'),
+      callback: raw_('callback'),
+      multiple: raw_('multiple'),
       file,
       line: node.line,
       raw: node.raw,
@@ -270,6 +400,8 @@ export class CharacterWizard {
   .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
   .toolbar button { padding: 6px 14px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
   .toolbar button:hover { background: var(--vscode-button-hoverBackground); }
+  .toolbar .search-box { padding: 4px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 3px; font-size: 12px; min-width: 180px; }
+  .toolbar .search-box::placeholder { color: var(--vscode-input-placeholderForeground); }
   .toolbar .count { font-size: 12px; color: var(--vscode-descriptionForeground); margin-left: auto; }
 
   .character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -368,7 +500,23 @@ export class CharacterWizard {
   .form-actions .btn-primary:hover { background: var(--vscode-button-hoverBackground); }
   .form-actions .btn-secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
 
-  .preview-code { margin-top: 12px; padding: 8px; background: var(--vscode-textBlockQuote-background); border-radius: 3px; font-family: monospace; font-size: 12px; white-space: pre; }
+  .preview-code { margin-top: 12px; padding: 8px; background: var(--vscode-textBlockQuote-background); border-radius: 3px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+
+  /* Advanced section */
+  .advanced-toggle {
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer; font-size: 12px; color: var(--vscode-textLink-foreground);
+    margin: 12px 0 8px; user-select: none; border: none; background: none; padding: 0;
+  }
+  .advanced-toggle:hover { text-decoration: underline; }
+  .advanced-toggle .arrow { transition: transform 0.2s; display: inline-block; font-size: 10px; }
+  .advanced-toggle .arrow.open { transform: rotate(90deg); }
+  .advanced-section { display: none; }
+  .advanced-section.open { display: block; }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--vscode-descriptionForeground); margin: 10px 0 4px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 2px; }
+  .form-row select { flex: 1; padding: 4px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 3px; font-size: 12px; }
+  .form-row .checkbox-group { display: flex; align-items: center; gap: 6px; flex: 1; font-size: 12px; }
+  .form-row .checkbox-group input[type="checkbox"] { width: 14px; height: 14px; }
 </style>
 </head>
 <body>
@@ -376,7 +524,8 @@ export class CharacterWizard {
 
   <div class="toolbar">
     <button onclick="toggleCreateForm()">${localize('+ New Character', '+ 新規キャラクター')}</button>
-    <span class="count">${localize(`${characters.length} characters`, `${characters.length}キャラクター`)}</span>
+    <input type="text" class="search-box" id="searchBox" placeholder="${localize('Filter characters...', 'キャラクター検索...')}" oninput="filterCharacters()" spellcheck="false" />
+    <span class="count" id="charCount">${localize(`${characters.length} characters`, `${characters.length}キャラクター`)}</span>
   </div>
 
   <!-- Create form -->
@@ -401,6 +550,140 @@ export class CharacterWizard {
       <label>${localize('Image Tag', '画像タグ')}</label>
       <input type="text" id="newImage" placeholder="${localize('(auto: same as variable)', '(自動: 変数名と同じ)')}" spellcheck="false" />
     </div>
+
+    <button class="advanced-toggle" type="button" onclick="toggleAdvanced()">
+      <span class="arrow" id="advArrow">▶</span> ${localize('Advanced / Styles', '詳細 / スタイル')}
+    </button>
+    <div class="advanced-section" id="advSection">
+
+      <!-- Who (Name) styling -->
+      <div class="section-label">${localize('Name Styling (who_*)', '名前スタイル (who_*)')}</div>
+      <div class="form-row">
+        <label>who_font</label>
+        <input type="text" id="newWhoFont" placeholder="e.g. fonts/brand_bold.ttf" spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>who_size</label>
+        <input type="text" id="newWhoSize" placeholder="e.g. 42" />
+      </div>
+      <div class="form-row">
+        <label>who_color</label>
+        <div class="color-group">
+          <input type="color" id="newWhoColorPicker" value="#ffffff" oninput="document.getElementById('newWhoColor').value=this.value" />
+          <input type="text" id="newWhoColor" placeholder="#ffffff" oninput="try{document.getElementById('newWhoColorPicker').value=this.value}catch(e){}" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>who_outlines</label>
+        <input type="text" id="newWhoOutlines" placeholder='e.g. [(2, "#000000")]' spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>who_bold</label>
+        <div class="checkbox-group"><input type="checkbox" id="newWhoBold" /> <span>True</span></div>
+      </div>
+      <div class="form-row">
+        <label>who_italic</label>
+        <div class="checkbox-group"><input type="checkbox" id="newWhoItalic" /> <span>True</span></div>
+      </div>
+
+      <!-- What (Dialogue) styling -->
+      <div class="section-label">${localize('Dialogue Styling (what_*)', 'セリフスタイル (what_*)')}</div>
+      <div class="form-row">
+        <label>what_font</label>
+        <input type="text" id="newWhatFont" placeholder="e.g. fonts/dialogue_reg.ttf" spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>what_size</label>
+        <input type="text" id="newWhatSize" placeholder="e.g. 32" />
+      </div>
+      <div class="form-row">
+        <label>what_color</label>
+        <div class="color-group">
+          <input type="color" id="newWhatColorPicker" value="#ffffff" oninput="document.getElementById('newWhatColor').value=this.value" />
+          <input type="text" id="newWhatColor" placeholder="#ffffff" oninput="try{document.getElementById('newWhatColorPicker').value=this.value}catch(e){}" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>what_outlines</label>
+        <input type="text" id="newWhatOutlines" placeholder='e.g. [(2, "#7a00c0ff")]' spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>what_text_align</label>
+        <select id="newWhatTextAlign">
+          <option value="">${localize('(default)', '(デフォルト)')}</option>
+          <option value="0.0">Left (0.0)</option>
+          <option value="0.5">Center (0.5)</option>
+          <option value="1.0">Right (1.0)</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>what_prefix</label>
+        <input type="text" id="newWhatPrefix" placeholder='e.g. «' />
+      </div>
+      <div class="form-row">
+        <label>what_suffix</label>
+        <input type="text" id="newWhatSuffix" placeholder='e.g. »' />
+      </div>
+
+      <!-- Window styling -->
+      <div class="section-label">${localize('Window Styling (window_*)', 'ウィンドウスタイル (window_*)')}</div>
+      <div class="form-row">
+        <label>window_background</label>
+        <input type="text" id="newWindowBg" placeholder="e.g. gui/bubble_abyo.png" spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>window_left_padding</label>
+        <input type="text" id="newWindowLeftPad" placeholder="e.g. 50" />
+      </div>
+      <div class="form-row">
+        <label>window_top_padding</label>
+        <input type="text" id="newWindowTopPad" placeholder="e.g. 30" />
+      </div>
+      <div class="form-row">
+        <label>window_margin</label>
+        <input type="text" id="newWindowMargin" placeholder="e.g. (10, 10, 10, 10)" spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>window_yminimum</label>
+        <input type="text" id="newWindowYmin" placeholder="e.g. 150" />
+      </div>
+
+      <!-- Other advanced -->
+      <div class="section-label">${localize('Advanced Properties', '詳細プロパティ')}</div>
+      <div class="form-row">
+        <label>kind</label>
+        <input type="text" id="newKind" placeholder="e.g. bubble, nvl_narrator, adv" spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>dynamic</label>
+        <div class="checkbox-group"><input type="checkbox" id="newDynamic" /> <span>True</span></div>
+      </div>
+      <div class="form-row">
+        <label>retain</label>
+        <div class="checkbox-group"><input type="checkbox" id="newRetain" /> <span>True</span></div>
+      </div>
+      <div class="form-row">
+        <label>multiple</label>
+        <input type="text" id="newMultiple" placeholder="e.g. 2" />
+      </div>
+      <div class="form-row">
+        <label>ctc</label>
+        <input type="text" id="newCtc" placeholder='e.g. ctc_anim' spellcheck="false" />
+      </div>
+      <div class="form-row">
+        <label>ctc_position</label>
+        <select id="newCtcPosition">
+          <option value="">${localize('(default)', '(デフォルト)')}</option>
+          <option value="nestled">nestled</option>
+          <option value="fixed">fixed</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>callback</label>
+        <input type="text" id="newCallback" placeholder="e.g. my_voice_callback" spellcheck="false" />
+      </div>
+    </div>
+
     <div id="previewCode" class="preview-code" style="display:none"></div>
     <div class="form-actions">
       <button class="btn-primary" onclick="createCharacter()">${localize('Insert Definition', '定義を挿入')}</button>
@@ -441,9 +724,10 @@ export class CharacterWizard {
       displayName: c.displayName,
       color: c.color,
       imageTag: c.imageTag,
-      whoColor: c.whoColor,
-      whatColor: c.whatColor,
-      callback: c.callback,
+      whoColor: c.whoColor, whoFont: c.whoFont, whoSize: c.whoSize, whoOutlines: c.whoOutlines, whoBold: c.whoBold, whoItalic: c.whoItalic,
+      whatColor: c.whatColor, whatFont: c.whatFont, whatSize: c.whatSize, whatOutlines: c.whatOutlines, whatTextAlign: c.whatTextAlign, whatPrefix: c.whatPrefix, whatSuffix: c.whatSuffix,
+      windowBackground: c.windowBackground, windowLeftPadding: c.windowLeftPadding, windowTopPadding: c.windowTopPadding, windowMargin: c.windowMargin, windowYminimum: c.windowYminimum,
+      kind: c.kind, dynamic: c.dynamic, retain: c.retain, ctc: c.ctc, ctcPosition: c.ctcPosition, callback: c.callback, multiple: c.multiple,
       file: c.file,
       line: c.line,
       raw: c.raw,
@@ -451,6 +735,21 @@ export class CharacterWizard {
     })))};
 
     let selectedChar = null;
+
+    function filterCharacters() {
+      const query = document.getElementById('searchBox').value.toLowerCase();
+      let visible = 0;
+      document.querySelectorAll('.character-card').forEach(card => {
+        const v = card.dataset.var.toLowerCase();
+        const name = (card.querySelector('.card-name') || {}).textContent || '';
+        const match = !query || v.includes(query) || name.toLowerCase().includes(query);
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      document.getElementById('charCount').textContent = query
+        ? visible + ' / ' + characters.length
+        : characters.length + ' ${localize('characters', 'キャラクター')}';
+    }
 
     function selectCharacter(variable) {
       const char = characters.find(c => c.variable === variable);
@@ -469,13 +768,42 @@ export class CharacterWizard {
 
       const props = document.getElementById('detailProps');
       let propsHtml = '';
-      propsHtml += '<dt>${localize('Variable', '変数')}</dt><dd>' + char.variable + '</dd>';
-      propsHtml += '<dt>${localize('Display Name', '表示名')}</dt><dd>' + char.displayName + '</dd>';
-      if (char.color) propsHtml += '<dt>${localize('Color', '色')}</dt><dd><span class="color-swatch" style="background:' + char.color + '"></span> ' + char.color + '</dd>';
-      if (char.imageTag) propsHtml += '<dt>${localize('Image Tag', '画像タグ')}</dt><dd>' + char.imageTag + '</dd>';
-      if (char.whoColor) propsHtml += '<dt>who_color</dt><dd><span class="color-swatch" style="background:' + char.whoColor + '"></span> ' + char.whoColor + '</dd>';
-      if (char.whatColor) propsHtml += '<dt>what_color</dt><dd><span class="color-swatch" style="background:' + char.whatColor + '"></span> ' + char.whatColor + '</dd>';
-      if (char.callback) propsHtml += '<dt>callback</dt><dd>' + char.callback + '</dd>';
+      const prop = (label, value) => { if (value) propsHtml += '<dt>' + label + '</dt><dd>' + value + '</dd>'; };
+      const colorProp = (label, value) => { if (value) propsHtml += '<dt>' + label + '</dt><dd><span class="color-swatch" style="background:' + value + '"></span> ' + value + '</dd>'; };
+
+      prop('${localize('Variable', '変数')}', char.variable);
+      prop('${localize('Display Name', '表示名')}', char.displayName);
+      colorProp('${localize('Color', '色')}', char.color);
+      prop('${localize('Image Tag', '画像タグ')}', char.imageTag);
+      prop('kind', char.kind);
+      // Who
+      prop('who_font', char.whoFont);
+      prop('who_size', char.whoSize);
+      colorProp('who_color', char.whoColor);
+      prop('who_outlines', char.whoOutlines);
+      prop('who_bold', char.whoBold);
+      prop('who_italic', char.whoItalic);
+      // What
+      prop('what_font', char.whatFont);
+      prop('what_size', char.whatSize);
+      colorProp('what_color', char.whatColor);
+      prop('what_outlines', char.whatOutlines);
+      prop('what_text_align', char.whatTextAlign);
+      prop('what_prefix', char.whatPrefix);
+      prop('what_suffix', char.whatSuffix);
+      // Window
+      prop('window_background', char.windowBackground);
+      prop('window_left_padding', char.windowLeftPadding);
+      prop('window_top_padding', char.windowTopPadding);
+      prop('window_margin', char.windowMargin);
+      prop('window_yminimum', char.windowYminimum);
+      // Advanced
+      prop('dynamic', char.dynamic);
+      prop('retain', char.retain);
+      prop('multiple', char.multiple);
+      prop('ctc', char.ctc);
+      prop('ctc_position', char.ctcPosition);
+      prop('callback', char.callback);
       propsHtml += '<dt>${localize('File', 'ファイル')}</dt><dd>' + char.file + ':' + (char.line + 1) + '</dd>';
       props.innerHTML = propsHtml;
 
@@ -530,42 +858,66 @@ export class CharacterWizard {
       document.getElementById('previewCode').style.display = 'none';
     }
 
-    function buildDefineStatement() {
-      const varName = document.getElementById('newVar').value.trim();
-      const displayName = document.getElementById('newName').value.trim();
-      const color = document.getElementById('newColor').value.trim();
-      const imageTag = document.getElementById('newImage').value.trim();
+    function toggleAdvanced() {
+      const section = document.getElementById('advSection');
+      const arrow = document.getElementById('advArrow');
+      section.classList.toggle('open');
+      arrow.classList.toggle('open');
+    }
 
-      if (!varName || !displayName) return null;
+    function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+    function checked(id) { const el = document.getElementById(id); return el ? el.checked : false; }
 
-      let params = [];
-      params.push('"' + displayName + '"');
-      if (color) params.push('color="' + color + '"');
-      if (imageTag) params.push('image="' + imageTag + '"');
-
-      return 'define ' + varName + ' = Character(' + params.join(', ') + ')';
+    function collectFormParams() {
+      return {
+        varName: val('newVar'),
+        displayName: val('newName'),
+        color: val('newColor'),
+        imageTag: val('newImage'),
+        kind: val('newKind'),
+        whoFont: val('newWhoFont'),
+        whoSize: val('newWhoSize'),
+        whoColor: val('newWhoColor'),
+        whoOutlines: val('newWhoOutlines'),
+        whoBold: checked('newWhoBold'),
+        whoItalic: checked('newWhoItalic'),
+        whatFont: val('newWhatFont'),
+        whatSize: val('newWhatSize'),
+        whatColor: val('newWhatColor'),
+        whatOutlines: val('newWhatOutlines'),
+        whatTextAlign: val('newWhatTextAlign'),
+        whatPrefix: val('newWhatPrefix'),
+        whatSuffix: val('newWhatSuffix'),
+        windowBackground: val('newWindowBg'),
+        windowLeftPadding: val('newWindowLeftPad'),
+        windowTopPadding: val('newWindowTopPad'),
+        windowMargin: val('newWindowMargin'),
+        windowYminimum: val('newWindowYmin'),
+        dynamic: checked('newDynamic'),
+        retain: checked('newRetain'),
+        multiple: val('newMultiple'),
+        ctc: val('newCtc'),
+        ctcPosition: val('newCtcPosition'),
+        callback: val('newCallback'),
+      };
     }
 
     function previewDefinition() {
-      const stmt = buildDefineStatement();
-      const preview = document.getElementById('previewCode');
-      if (stmt) {
-        preview.textContent = stmt;
-        preview.style.display = 'block';
-      } else {
-        preview.textContent = '${localize('Please fill in Variable Name and Display Name.', '変数名と表示名を入力してください。')}';
-        preview.style.display = 'block';
-      }
+      vscode.postMessage({ command: 'previewStatement', params: collectFormParams() });
     }
 
     function createCharacter() {
-      const stmt = buildDefineStatement();
-      if (!stmt) {
-        previewDefinition();
-        return;
-      }
-      vscode.postMessage({ command: 'insertCharacter', statement: stmt });
+      vscode.postMessage({ command: 'createCharacter', params: collectFormParams() });
     }
+
+    window.addEventListener('message', event => {
+      const msg = event.data;
+      if (msg.command === 'previewResult') {
+        const preview = document.getElementById('previewCode');
+        preview.textContent = msg.text;
+        preview.style.display = 'block';
+      }
+    });
   </script>
 </body>
 </html>`;
@@ -638,10 +990,29 @@ export class CharacterWizard {
         break;
       }
 
+      case 'previewStatement': {
+        const stmt = buildDefineStatement(msg.params);
+        const text = stmt || localize('Please fill in Variable Name and Display Name.', '変数名と表示名を入力してください。');
+        this._panel?.webview.postMessage({ command: 'previewResult', text });
+        break;
+      }
+
+      case 'createCharacter': {
+        const statement = buildDefineStatement(msg.params);
+        if (!statement) {
+          const text = localize('Please fill in Variable Name and Display Name.', '変数名と表示名を入力してください。');
+          this._panel?.webview.postMessage({ command: 'previewResult', text });
+          return;
+        }
+        await this.insertCharacterStatement(statement);
+        // Refresh after a short delay to let the indexer pick up the change
+        setTimeout(() => this.refresh(), 500);
+        break;
+      }
+
       case 'insertCharacter': {
         if (!msg.statement) return;
         await this.insertCharacterStatement(msg.statement);
-        // Refresh after a short delay to let the indexer pick up the change
         setTimeout(() => this.refresh(), 500);
         break;
       }

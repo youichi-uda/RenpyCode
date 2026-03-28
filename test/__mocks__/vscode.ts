@@ -17,6 +17,15 @@ export class Range {
   get end() { return new Position(this.endLine, this.endCharacter); }
 }
 
+export class Selection extends Range {
+  constructor(
+    public readonly anchor: Position,
+    public readonly active: Position,
+  ) {
+    super(anchor.line, anchor.character, active.line, active.character);
+  }
+}
+
 export class Uri {
   constructor(public readonly fsPath: string, public readonly scheme: string = 'file') {}
   static file(p: string) { return new Uri(p); }
@@ -197,7 +206,12 @@ export const window = {
   showInputBox: async () => undefined,
   createOutputChannel: () => ({ appendLine() {}, append() {}, show() {}, clear() {}, dispose() {} }),
   createWebviewPanel: () => ({
-    webview: { html: '', onDidReceiveMessage: () => ({ dispose() {} }) },
+    webview: {
+      html: '',
+      onDidReceiveMessage: () => ({ dispose() {} }),
+      asWebviewUri: (uri: any) => ({ toString: () => `https://webview/${uri.fsPath}` }),
+      postMessage: async () => true,
+    },
     reveal() {},
     onDidDispose: () => ({ dispose() {} }),
     dispose() {},

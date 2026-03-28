@@ -2,7 +2,7 @@
   "name": "renpy-code",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "abyo-software",
   "repository": {
     "type": "git",
@@ -352,6 +352,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.85.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "@vscode/debugadapter": "^1.65.0",
     "@vscode/debugprotocol": "^1.65.0",
     "@vscode/l10n-dev": "^0.0.35",
