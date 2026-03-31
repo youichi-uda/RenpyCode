@@ -121,7 +121,7 @@ export class AssetProvider {
     for (const pattern of assetPatterns) {
       const files = await vscode.workspace.findFiles(
         new vscode.RelativePattern(gameDir, pattern),
-        '{**/_mcp/**,**/.git/**}',
+        '{**/_mcp/**,**/.git/**,**/*.rpe.py}',
       );
 
       for (const file of files) {
@@ -183,7 +183,10 @@ export class AssetProvider {
   .filter button { padding: 4px 12px; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); border: none; border-radius: 3px; cursor: pointer; font-size: 12px; }
   .filter button.active { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; padding: 6px 8px; background: var(--vscode-editor-background); border-bottom: 1px solid var(--vscode-panel-border); }
+  th { text-align: left; padding: 6px 8px; background: var(--vscode-editor-background); border-bottom: 1px solid var(--vscode-panel-border); cursor: pointer; user-select: none; }
+  th:hover { color: var(--vscode-textLink-foreground); }
+  th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: 0.5; }
+  th .sort-arrow.active { opacity: 1; }
   td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border); }
   tr.unused { background: rgba(244, 67, 54, 0.1); }
   tbody tr { cursor: pointer; }
@@ -215,13 +218,19 @@ export class AssetProvider {
   </div>
 
   <table id="assetTable">
-    <thead><tr><th>${localize('Name', '名前')}</th><th>${localize('Type', '種類')}</th><th>${localize('Size', 'サイズ')}</th><th>${localize('Status', '状態')}</th><th>${localize('Path', 'パス')}</th></tr></thead>
+    <thead><tr>
+      <th data-col="0" onclick="sortTable(0)">${localize('Name', '名前')}<span class="sort-arrow active">▲</span></th>
+      <th data-col="1" onclick="sortTable(1)">${localize('Type', '種類')}<span class="sort-arrow"></span></th>
+      <th data-col="2" onclick="sortTable(2)">${localize('Size', 'サイズ')}<span class="sort-arrow"></span></th>
+      <th data-col="3" onclick="sortTable(3)">${localize('Status', '状態')}<span class="sort-arrow"></span></th>
+      <th data-col="4" onclick="sortTable(4)">${localize('Path', 'パス')}<span class="sort-arrow"></span></th>
+    </tr></thead>
     <tbody>
       ${assets.map(a => `<tr class="${a.used ? '' : 'unused'}" data-type="${a.type}" data-used="${a.used}" data-path="${a.path}">
         <td>${a.name}</td>
         <td><span class="type-badge type-${a.type}">${a.type}</span></td>
-        <td>${a.sizeKb}KB</td>
-        <td class="${a.used ? 'status-used' : 'status-unused'}">${a.used ? localize('✓ Used', '✓ 使用中') : localize('✗ Unused', '✗ 未使用')}</td>
+        <td data-sort="${a.sizeKb}">${a.sizeKb}KB</td>
+        <td class="${a.used ? 'status-used' : 'status-unused'}" data-sort="${a.used ? '0' : '1'}">${a.used ? localize('✓ Used', '✓ 使用中') : localize('✗ Unused', '✗ 未使用')}</td>
         <td style="font-size:10px;color:var(--vscode-descriptionForeground)">${a.path}</td>
       </tr>`).join('\n')}
     </tbody>
@@ -229,6 +238,32 @@ export class AssetProvider {
 
   <script>
     const vscode = acquireVsCodeApi();
+    let currentSort = { col: 0, asc: true };
+
+    function sortTable(col) {
+      const tbody = document.querySelector('#assetTable tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const asc = currentSort.col === col ? !currentSort.asc : true;
+      currentSort = { col, asc };
+
+      rows.sort((a, b) => {
+        const cellA = a.children[col];
+        const cellB = b.children[col];
+        const valA = cellA.dataset.sort !== undefined ? cellA.dataset.sort : cellA.textContent;
+        const valB = cellB.dataset.sort !== undefined ? cellB.dataset.sort : cellB.textContent;
+        const numA = Number(valA), numB = Number(valB);
+        let cmp = (!isNaN(numA) && !isNaN(numB)) ? numA - numB : String(valA).localeCompare(String(valB));
+        return asc ? cmp : -cmp;
+      });
+
+      rows.forEach(r => tbody.appendChild(r));
+
+      document.querySelectorAll('#assetTable th .sort-arrow').forEach((arrow, i) => {
+        arrow.className = 'sort-arrow' + (i === col ? ' active' : '');
+        arrow.textContent = i === col ? (asc ? '\\u25B2' : '\\u25BC') : '';
+      });
+    }
+
     function filterAssets(type, btn) {
       document.querySelectorAll('.filter button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
@@ -238,6 +273,7 @@ export class AssetProvider {
         tr.style.display = tr.dataset.type === type ? '' : 'none';
       });
     }
+
     document.querySelectorAll('#assetTable tbody tr').forEach(tr => {
       tr.addEventListener('click', () => {
         vscode.postMessage({ command: 'openFile', path: tr.dataset.path });

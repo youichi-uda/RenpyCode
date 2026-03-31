@@ -12,6 +12,7 @@ import { localize } from '../language/i18n';
 export class RenpyRunner {
   private gameProcess: ChildProcess | null = null;
   private _bridge?: import('../bridge/bridge-manager').BridgeManager;
+  private _gameExitCallbacks: (() => void)[] = [];
 
   setBridge(bridge: import('../bridge/bridge-manager').BridgeManager): void {
     this._bridge = bridge;
@@ -114,6 +115,7 @@ export class RenpyRunner {
 
     this.gameProcess.on('close', () => {
       this.gameProcess = null;
+      this._fireGameExit();
     });
 
     vscode.window.showInformationMessage(vscode.l10n.t('Game launched successfully.'));
@@ -291,6 +293,25 @@ export class RenpyRunner {
         resolve(localize('Translation generation timed out after 60 seconds.', '翻訳生成が60秒でタイムアウトしました。'));
       }, 60000);
     });
+  }
+
+  /**
+   * Register a one-time callback for when the game process exits.
+   */
+  onGameExit(callback: () => void): void {
+    if (!this.gameProcess) {
+      // Game already exited or never started
+      callback();
+      return;
+    }
+    this._gameExitCallbacks.push(callback);
+  }
+
+  private _fireGameExit(): void {
+    const callbacks = this._gameExitCallbacks.splice(0);
+    for (const cb of callbacks) {
+      try { cb(); } catch { /* ignore */ }
+    }
   }
 
   /**

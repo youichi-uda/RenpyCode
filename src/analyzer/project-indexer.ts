@@ -36,7 +36,7 @@ export class ProjectIndexer {
 
     const files = await vscode.workspace.findFiles(
       '**/*.rpy',
-      '{**/tl/**,**/_mcp/**,**/.git/**}',
+      '{**/tl/**,**/_mcp/**,**/.git/**,**/*.rpe.py}',
     );
 
     for (const file of files) {

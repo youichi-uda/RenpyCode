@@ -39,6 +39,8 @@ interface CharacterInfo {
   windowTopPadding?: string;
   windowMargin?: string;
   windowYminimum?: string;
+  /** Voice */
+  voiceTag?: string;
   /** Advanced properties */
   kind?: string;
   dynamic?: string;
@@ -93,6 +95,7 @@ export interface CharacterDefineParams {
   windowTopPadding?: string;
   windowMargin?: string;
   windowYminimum?: string;
+  voiceTag?: string;
   dynamic?: boolean;
   retain?: boolean;
   multiple?: string;
@@ -117,6 +120,7 @@ export function buildDefineStatement(params: CharacterDefineParams): string | nu
   // Basic
   if (params.color) parts.push(`color="${params.color}"`);
   if (params.imageTag) parts.push(`image="${params.imageTag}"`);
+  if (params.voiceTag) parts.push(`voice_tag="${params.voiceTag}"`);
 
   // Who-styling
   if (params.whoFont) parts.push(`who_font="${params.whoFont}"`);
@@ -247,6 +251,7 @@ export class CharacterWizard {
       displayName,
       color: str('color'),
       imageTag: str('image'),
+      voiceTag: str('voice_tag'),
       // Who-styling
       whoColor: str('who_color'),
       whoFont: str('who_font'),
@@ -550,6 +555,10 @@ export class CharacterWizard {
       <label>${localize('Image Tag', '画像タグ')}</label>
       <input type="text" id="newImage" placeholder="${localize('(auto: same as variable)', '(自動: 変数名と同じ)')}" spellcheck="false" />
     </div>
+    <div class="form-row">
+      <label>voice_tag</label>
+      <input type="text" id="newVoiceTag" placeholder="${localize('(for config.auto_voice)', '(config.auto_voice用)')}" spellcheck="false" />
+    </div>
 
     <button class="advanced-toggle" type="button" onclick="toggleAdvanced()">
       <span class="arrow" id="advArrow">▶</span> ${localize('Advanced / Styles', '詳細 / スタイル')}
@@ -724,6 +733,7 @@ export class CharacterWizard {
       displayName: c.displayName,
       color: c.color,
       imageTag: c.imageTag,
+      voiceTag: c.voiceTag,
       whoColor: c.whoColor, whoFont: c.whoFont, whoSize: c.whoSize, whoOutlines: c.whoOutlines, whoBold: c.whoBold, whoItalic: c.whoItalic,
       whatColor: c.whatColor, whatFont: c.whatFont, whatSize: c.whatSize, whatOutlines: c.whatOutlines, whatTextAlign: c.whatTextAlign, whatPrefix: c.whatPrefix, whatSuffix: c.whatSuffix,
       windowBackground: c.windowBackground, windowLeftPadding: c.windowLeftPadding, windowTopPadding: c.windowTopPadding, windowMargin: c.windowMargin, windowYminimum: c.windowYminimum,
@@ -775,6 +785,7 @@ export class CharacterWizard {
       prop('${localize('Display Name', '表示名')}', char.displayName);
       colorProp('${localize('Color', '色')}', char.color);
       prop('${localize('Image Tag', '画像タグ')}', char.imageTag);
+      prop('voice_tag', char.voiceTag);
       prop('kind', char.kind);
       // Who
       prop('who_font', char.whoFont);
@@ -874,6 +885,7 @@ export class CharacterWizard {
         displayName: val('newName'),
         color: val('newColor'),
         imageTag: val('newImage'),
+        voiceTag: val('newVoiceTag'),
         kind: val('newKind'),
         whoFont: val('newWhoFont'),
         whoSize: val('newWhoSize'),
@@ -924,7 +936,7 @@ export class CharacterWizard {
   }
 
   private renderCharacterCard(char: CharacterInfo, webview: vscode.Webview): string {
-    const bgColor = char.color || '#666';
+    const bgColor = char.color || char.whoColor || '#666';
     const initial = char.displayName.charAt(0).toUpperCase();
     const exprCount = char.expressions.length;
 
@@ -950,6 +962,7 @@ export class CharacterWizard {
       <div class="card-meta">
         ${char.color ? `<span><span class="color-swatch" style="background:${char.color}"></span>${char.color}</span>` : ''}
         ${char.imageTag ? `<span>img: ${char.imageTag}</span>` : ''}
+        ${char.voiceTag ? `<span>voice: ${char.voiceTag}</span>` : ''}
         <span>${exprCount} ${localize('expressions', '表情')}</span>
       </div>
     </div>`;

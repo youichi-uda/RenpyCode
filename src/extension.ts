@@ -79,11 +79,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const bridge = new BridgeManager();
   runner.setBridge(bridge);
 
-  // Set up bridge with project root
+  // Set up bridge with project root (but don't start polling until game launches)
   const projectRoot = runner.getProjectRoot();
   if (projectRoot) {
     bridge.setProjectRoot(projectRoot);
-    bridge.startPolling();
   }
 
   const getDiagConfig = (): DiagnosticsConfig => {
@@ -285,14 +284,16 @@ export function activate(context: vscode.ExtensionContext): void {
         },
       );
     }),
-    vscode.commands.registerCommand('renpyCode.launchGame', () => {
+    vscode.commands.registerCommand('renpyCode.launchGame', async () => {
       const projectRoot = runner.getProjectRoot();
       if (projectRoot) {
         bridge.installBridge(context.extensionPath, projectRoot);
         bridge.setProjectRoot(projectRoot);
         bridge.startPolling();
       }
-      runner.launchGame();
+      await runner.launchGame();
+      // Stop polling when game exits
+      runner.onGameExit(() => bridge.stopPolling());
     }),
     vscode.commands.registerCommand('renpyCode.killGame', () => runner.killGame()),
     vscode.commands.registerCommand('renpyCode.lint', async () => {
@@ -417,6 +418,11 @@ export function activate(context: vscode.ExtensionContext): void {
         }
         return config;
       },
+    }),
+    vscode.debug.onDidTerminateDebugSession((session) => {
+      if (session.type === 'renpy') {
+        bridge.stopPolling();
+      }
     }),
     vscode.debug.registerDebugAdapterDescriptorFactory('renpy', {
       createDebugAdapterDescriptor(): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {

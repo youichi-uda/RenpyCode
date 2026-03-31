@@ -2,7 +2,7 @@
   "name": "renpy-code",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "publisher": "abyo-software",
   "repository": {
     "type": "git",
@@ -71,6 +71,10 @@
         },
         "editor.tabSize": 4,
         "editor.insertSpaces": true
+      },
+      "files.watcherExclude": {
+        "**/game/_mcp/**": true,
+        "**/*.rpe.py": true
       }
     },
     "configuration": {

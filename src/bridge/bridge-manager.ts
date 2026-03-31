@@ -50,7 +50,7 @@ export class BridgeManager {
   /**
    * Start polling for bridge status.
    */
-  startPolling(intervalMs: number = 1000): void {
+  startPolling(intervalMs: number = 3000): void {
     this.stopPolling();
     this._pollInterval = setInterval(() => {
       this.checkStatus();
@@ -271,8 +271,21 @@ export class BridgeManager {
   }
 
   private checkStatus(): void {
-    const connected = this.isConnected();
-    const statusData = connected ? this.readStatus() : null;
+    // Single-pass file read: stat + read in one try block to minimize file I/O
+    let connected = false;
+    let statusData: BridgeResponse | null = null;
+
+    try {
+      const statusPath = path.join(this._mcpDir, 'status.json');
+      const stat = fs.statSync(statusPath);
+      connected = (Date.now() - stat.mtimeMs) < 5000;
+      if (connected) {
+        const content = fs.readFileSync(statusPath, 'utf-8');
+        statusData = JSON.parse(content);
+      }
+    } catch {
+      // File doesn't exist or is being written — treat as disconnected
+    }
 
     // Only update label/scene from heartbeat responses (command responses don't have these fields)
     const isHeartbeat = statusData?.action === 'heartbeat';
